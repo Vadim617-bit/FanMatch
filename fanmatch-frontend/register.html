@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <title>Реєстрація – FanMatch</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 flex items-center justify-center h-screen">
+  <form onsubmit="registerUser(event)" class="bg-white p-6 rounded-lg shadow-md w-80">
+    <h2 class="text-xl font-semibold mb-4 text-blue-700">Реєстрація</h2>
+    <input id="reg-username" type="text" placeholder="Ім'я користувача" required class="w-full mb-3 p-2 border rounded" />
+    <input id="reg-password" type="password" placeholder="Пароль" required class="w-full mb-3 p-2 border rounded" />
+    <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">Зареєструватися</button>
+    <p class="mt-4 text-sm text-center text-gray-500">
+      Вже є акаунт? <a href="login.html" class="text-blue-600 hover:underline">Увійти</a>
+    </p>
+  </form>
+
+  <script src="script.js"></script>
+</body>
+</html>
+
