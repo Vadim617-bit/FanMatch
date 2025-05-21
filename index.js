@@ -78,22 +78,33 @@ app.get('/', (req, res) => {
   res.send('FanMatch backend is running!');
 });
 
-// 🔹 Реєстрація
+// 🔹 Реєстрація (оновлено)
 app.post('/register', async (req, res) => {
   const { username, email, password } = req.body;
   const hashedPassword = await bcrypt.hash(password, 10);
 
-  db.run(
-    `INSERT INTO users (username, email, password) VALUES (?, ?, ?)`,
-    [username, email, hashedPassword],
-    function (err) {
-      if (err) {
-        console.error(err.message);
-        return res.status(400).json({ error: 'Користувач з такою поштою вже існує' });
-      }
-      res.status(201).json({ message: 'Користувача створено' });
+  db.get(`SELECT * FROM users WHERE email = ?`, [email], (err, row) => {
+    if (err) {
+      console.error('Помилка при перевірці користувача:', err);
+      return res.status(500).json({ error: 'Внутрішня помилка сервера' });
     }
-  );
+
+    if (row) {
+      return res.status(400).json({ error: 'Користувач з такою поштою вже існує' });
+    }
+
+    db.run(
+      `INSERT INTO users (username, email, password) VALUES (?, ?, ?)`,
+      [username, email, hashedPassword],
+      function (err) {
+        if (err) {
+          console.error('Помилка при створенні користувача:', err);
+          return res.status(500).json({ error: 'Не вдалося створити користувача' });
+        }
+        res.status(201).json({ message: 'Користувача створено' });
+      }
+    );
+  });
 });
 
 // 🔹 Логін
