@@ -199,3 +199,57 @@ app.get('/events/:id/participants', (req, res) => {
 app.listen(port, () => {
   console.log(`Сервер запущено на http://localhost:${port}`);
 });
+
+// 🔎 Отримання події за ID
+app.get('/events/:id', (req, res) => {
+  const eventId = req.params.id;
+
+  db.get(
+    `SELECT events.*, users.username AS creator_name FROM events JOIN users ON events.creator_id = users.id WHERE events.id = ?`,
+    [eventId],
+    (err, row) => {
+      if (err) {
+        return res.status(500).json({ error: 'Не вдалося отримати подію' });
+      }
+      if (!row) {
+        return res.status(404).json({ error: 'Подію не знайдено' });
+      }
+      res.json(row);
+    }
+  );
+});
+
+
+// 🔁 Оновлення події
+app.put('/events/:id', (req, res) => {
+  const eventId = req.params.id;
+  const { title, location, time } = req.body;
+
+  db.run(
+    `UPDATE events SET title = ?, location = ?, time = ? WHERE id = ?`,
+    [title, location, time, eventId],
+    function (err) {
+      if (err) {
+        return res.status(500).json({ error: 'Помилка бази даних при оновленні' });
+      }
+      res.json({ message: 'Оновлено' });
+    }
+  );
+});
+
+// ❌ Видалення події
+app.delete('/events/:id', (req, res) => {
+  const eventId = req.params.id;
+
+  db.run(
+    `DELETE FROM events WHERE id = ?`,
+    [eventId],
+    function (err) {
+      if (err) {
+        return res.status(500).json({ error: 'Помилка при видаленні' });
+      }
+      res.json({ message: 'Видалено' });
+    }
+  );
+});
+
