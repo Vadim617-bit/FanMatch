@@ -34,18 +34,23 @@ async function loadEvents() {
     eventsListElement.innerHTML = '';
     events.forEach(event => {
       const eventDiv = document.createElement('div');
-      eventDiv.classList.add('bg-white', 'p-4', 'rounded-lg', 'shadow');
-      eventDiv.innerHTML = `
-        <h3 class="font-semibold">${event.title}</h3>
-        <p>Місце: ${event.location}</p>
-        <p>Час: ${event.time}</p>
-        <p>Створено: ${event.creator_name}</p>
-        <button onclick="joinEvent(${event.id})" class="bg-blue-500 text-white px-4 py-2 rounded mt-2">Приєднатися</button>
-        ${event.creator_name === username ? `
-          <button onclick="editEvent(${event.id})" class="bg-yellow-500 text-white px-4 py-2 rounded mt-2">Редагувати</button>
-          <button onclick="deleteEvent(${event.id})" class="bg-red-500 text-white px-4 py-2 rounded mt-2">Видалити</button>
-        ` : ''}
+      eventDiv.className = 'bg-black bg-opacity-60 border border-green-600 rounded-2xl p-5 shadow-lg transition hover:scale-[1.01]';
+
+      const eventHTML = `
+        <h3 class="text-xl font-bold text-green-300 mb-2">⚽ ${event.title}</h3>
+        <p class="text-white"><span class="mr-1">📍</span> ${event.location}</p>
+        <p class="text-white"><span class="mr-1">⏰</span> ${new Date(event.time).toLocaleString()}</p>
+        <p class="text-sm text-gray-400 italic mt-1">👤 ${event.creator_name}</p>
+        <div class="mt-4 flex flex-wrap gap-2">
+          <button onclick="joinEvent(${event.id})" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">Приєднатись</button>
+          ${event.creator_name === username ? `
+            <button onclick="editEvent(${event.id})" class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded">Редагувати</button>
+            <button onclick="deleteEvent(${event.id})" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded">Видалити</button>
+          ` : ''}
+        </div>
       `;
+
+      eventDiv.innerHTML = eventHTML;
       eventsListElement.appendChild(eventDiv);
     });
   } catch (error) {
