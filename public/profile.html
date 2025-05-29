@@ -2,38 +2,78 @@
 <html lang="uk">
 <head>
   <meta charset="UTF-8" />
-  <title>Мій профіль – FanMatch</title>
+  <title>👤 Профіль – FanMatch</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <script src="script.js" defer></script>
 </head>
-<body class="bg-gray-100 min-h-screen">
+<body class="min-h-screen bg-gradient-to-br from-green-800 via-green-900 to-gray-900 text-white font-sans">
 
   <!-- 🧭 Навігація -->
-  <header class="bg-white shadow p-4 flex justify-between items-center">
-    <h1 class="text-2xl font-bold text-blue-700">👤 Мій профіль</h1>
+  <header class="bg-black bg-opacity-80 p-4 shadow-lg flex justify-between items-center">
+    <h1 class="text-2xl font-bold tracking-wide">👤 Мій профіль</h1>
     <div class="space-x-4">
-      <a href="index.html" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">⬅ До подій</a>
-      <button onclick="logout()" class="bg-gray-700 text-white px-4 py-2 rounded hover:bg-gray-800">Вийти</button>
+      <a href="/" class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded text-white transition">⬅ До подій</a>
+      <button onclick="logout()" class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded text-white">Вийти</button>
     </div>
   </header>
 
-  <!-- 🧑 Інформація про користувача -->
-  <main class="p-6 max-w-3xl mx-auto">
-    <h2 class="text-xl font-semibold mb-4 text-gray-800">Привіт, <span id="username" class="text-blue-700">Користувач</span>!</h2>
+  <!-- 👤 Інформація -->
+  <main class="max-w-4xl mx-auto py-8 px-4">
+    <h2 class="text-2xl font-semibold mb-4 text-white">Вітаємо, <span id="username" class="text-green-300 font-bold"></span>!</h2>
 
-    <h3 class="text-lg font-semibold mb-2 text-gray-700">Твої події</h3>
-    <div id="my-events" class="space-y-4">
-      <!-- Список подій, створених користувачем -->
+    <h3 class="text-xl mb-3 text-white">📅 Твої події</h3>
+    <div id="my-events" class="space-y-6">
+      <!-- Події користувача -->
     </div>
   </main>
 
-  <script src="script.js"></script>
   <script>
-    fetchMyEvents();
+    const usernameEl = document.getElementById('username');
+    const myEventsEl = document.getElementById('my-events');
+    const userId = localStorage.getItem('userId');
+    const username = localStorage.getItem('username');
+
+    usernameEl.textContent = username;
+
+    async function fetchMyEvents() {
+      try {
+        const res = await axios.get('http://localhost:3000/events');
+        const events = res.data.filter(e => e.creator_id == userId);
+
+        myEventsEl.innerHTML = '';
+
+        if (events.length === 0) {
+          myEventsEl.innerHTML = `<p class="text-gray-300">Ти ще не створював жодної події.</p>`;
+          return;
+        }
+
+        events.forEach(event => {
+          const div = document.createElement('div');
+          div.className = 'bg-black bg-opacity-60 border border-green-600 rounded-2xl p-5 shadow-lg transition hover:scale-[1.01]';
+          div.innerHTML = `
+            <h4 class="text-xl font-bold text-green-300 mb-2">⚽ ${event.title}</h4>
+            <p class="text-white"><span class="mr-1">📍</span> ${event.location}</p>
+            <p class="text-white"><span class="mr-1">⏰</span> ${new Date(event.time).toLocaleString()}</p>
+            <div class="mt-4 flex flex-wrap gap-2">
+              <button onclick="editEvent(${event.id})" class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded">Редагувати</button>
+              <button onclick="deleteEvent(${event.id})" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded">Видалити</button>
+            </div>
+          `;
+          myEventsEl.appendChild(div);
+        });
+      } catch (err) {
+        console.error('Не вдалося отримати події:', err);
+        myEventsEl.innerHTML = `<p class="text-red-400">Сталася помилка при завантаженні.</p>`;
+      }
+    }
 
     function logout() {
-      localStorage.removeItem('token');
-      window.location.href = 'login.html';
+      localStorage.clear();
+      window.location.href = '/login';
     }
+
+    fetchMyEvents();
   </script>
 </body>
 </html>
