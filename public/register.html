@@ -5,18 +5,19 @@
   <title>Реєстрація – FanMatch</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-100 flex items-center justify-center h-screen">
-  <form onsubmit="registerUser(event)" class="bg-white p-6 rounded-lg shadow-md w-80">
-    <h2 class="text-xl font-semibold mb-4 text-blue-700">Реєстрація</h2>
-    <input id="reg-username" type="text" placeholder="Ім'я користувача" required class="w-full mb-3 p-2 border rounded" />
-    <input id="reg-password" type="password" placeholder="Пароль" required class="w-full mb-3 p-2 border rounded" />
-    <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">Зареєструватися</button>
-    <p class="mt-4 text-sm text-center text-gray-500">
-      Вже є акаунт? <a href="login.html" class="text-blue-600 hover:underline">Увійти</a>
+<body class="min-h-screen bg-gradient-to-br from-green-800 via-green-900 to-gray-900 flex items-center justify-center text-white font-sans">
+  <form onsubmit="registerUser(event)" class="bg-black bg-opacity-70 p-8 rounded-xl shadow-xl w-80">
+    <h2 class="text-2xl font-bold text-green-300 mb-6 text-center">⚽ Реєстрація в FanMatch</h2>
+    <input id="reg-username" type="text" placeholder="Ім'я користувача"
+           required class="w-full mb-4 p-2 border border-green-500 rounded bg-transparent text-white placeholder-gray-400" />
+    <input id="reg-password" type="password" placeholder="Пароль"
+           required class="w-full mb-4 p-2 border border-green-500 rounded bg-transparent text-white placeholder-gray-400" />
+    <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded">Зареєструватися</button>
+    <p class="mt-4 text-sm text-center text-gray-300">
+      Вже маєш акаунт?
+      <a href="login.html" class="text-green-300 hover:underline">Увійти</a>
     </p>
   </form>
-
   <script src="script.js"></script>
 </body>
 </html>
-
