@@ -20,6 +20,45 @@ function logout() {
   window.location.href = 'login.html';
 }
 
+// ================== Створення подій =================
+async function createEvent(e) {
+  e.preventDefault();
+
+  const title = document.getElementById('title').value;
+  const location = document.getElementById('location').value;
+  const time = document.getElementById('date_time').value;
+  const image = document.getElementById('image').files[0];
+  const creatorId = localStorage.getItem('userId');
+
+  const formData = new FormData();
+  formData.append('title', title);
+  formData.append('location', location);
+  formData.append('time', time);
+  formData.append('creatorId', creatorId);
+  if (image) {
+    formData.append('image', image);
+  }
+
+  try {
+    const res = await fetch('/events', {
+      method: 'POST',
+      body: formData
+    });
+
+    const data = await res.json();
+
+    if (res.ok) {
+      alert('Подію створено!');
+      window.location.href = '/';
+    } else {
+      alert(data.error || 'Помилка створення події');
+    }
+  } catch (err) {
+    console.error(err);
+    alert('Помилка зʼєднання з сервером');
+  }
+}
+
 // ================== Перехід на створення подій ==================
 document.getElementById('createEventBtn')?.addEventListener('click', () => {
   window.location.href = 'create.html';
@@ -37,6 +76,7 @@ async function loadEvents() {
       eventDiv.className = 'bg-black bg-opacity-60 border border-green-600 rounded-2xl p-5 shadow-lg transition hover:scale-[1.01]';
 
       const eventHTML = `
+        ${event.image ? `<img src="${event.image}" alt="Зображення події" class="w-full h-48 object-cover rounded mb-3">` : ''}
         <h3 class="text-xl font-bold text-green-300 mb-2">⚽ ${event.title}</h3>
         <p class="text-white"><span class="mr-1">📍</span> ${event.location}</p>
         <p class="text-white"><span class="mr-1">⏰</span> ${new Date(event.time).toLocaleString()}</p>

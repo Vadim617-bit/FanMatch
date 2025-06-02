@@ -6,6 +6,31 @@ const jwt = require('jsonwebtoken');
 const app = express();
 const port = 3000;
 const path = require('path');
+const multer = require('multer');
+const fs = require('fs');
+
+// Створити директорію uploads, якщо не існує
+const uploadDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir);
+}
+
+// Налаштування multer
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const ext = path.extname(file.originalname);
+    cb(null, `${file.fieldname}-${uniqueSuffix}${ext}`);
+  }
+});
+const upload = multer({ storage });
+
+// Віддавати зображення як статику
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 
 // Додати віддавання статичних файлів
 app.use(express.static(path.join(__dirname, 'public')));
@@ -78,7 +103,7 @@ app.get('/', (req, res) => {
   res.send('FanMatch backend is running!');
 });
 
-// 🔹 Реєстрація (оновлено)
+// 🔹 Реєстрація
 app.post('/register', async (req, res) => {
   const { username, email, password } = req.body;
   const hashedPassword = await bcrypt.hash(password, 10);
@@ -127,14 +152,20 @@ app.post('/login', (req, res) => {
 });
 
 // 🔹 Створення події
-app.post('/events', (req, res) => {
+app.post('/events', upload.single('image'), (req, res) => {
   const { title, location, time, creatorId } = req.body;
+  const imagePath = req.file ? `/uploads/${req.file.filename}` : null;
+
+  if (!title || !location || !time || !creatorId) {
+    return res.status(400).json({ error: 'Усі поля обовʼязкові' });
+  }
 
   db.run(
-    `INSERT INTO events (title, location, time, creator_id) VALUES (?, ?, ?, ?)`,
-    [title, location, time, creatorId],
+    `INSERT INTO events (title, location, time, creator_id, image) VALUES (?, ?, ?, ?, ?)`,
+    [title, location, time, creatorId, imagePath],
     function (err) {
       if (err) {
+        console.error('Помилка додавання події:', err.message);
         return res.status(500).json({ error: 'Помилка при створенні події' });
       }
       res.status(201).json({ eventId: this.lastID });

@@ -19,25 +19,18 @@
   <!-- 📝 Форма створення -->
   <main class="p-6 max-w-xl mx-auto">
     <h2 class="text-2xl font-semibold mb-6 text-white">➕ Створити футбольну подію</h2>
-    <form onsubmit="createEvent(event)" class="space-y-4 bg-black bg-opacity-60 p-6 rounded-xl shadow-xl">
+    <form id="createForm" class="space-y-4 bg-black bg-opacity-60 p-6 rounded-xl shadow-xl">
 
       <div>
         <label class="block mb-1 text-green-300">Назва події</label>
-        <input id="title" type="text" required placeholder="Наприклад: Перегляд матчу ЧС"
+        <input id="title" type="text" required placeholder="Наприклад: Перегляд фіналу"
                class="w-full p-2 border border-green-500 bg-transparent rounded text-white placeholder-gray-400" />
       </div>
 
-      <div class="grid grid-cols-2 gap-4">
-        <div>
-          <label class="block mb-1 text-green-300">Команда 1</label>
-          <input id="team1" type="text" required placeholder="Україна"
-                 class="w-full p-2 border border-green-500 bg-transparent rounded text-white placeholder-gray-400" />
-        </div>
-        <div>
-          <label class="block mb-1 text-green-300">Команда 2</label>
-          <input id="team2" type="text" required placeholder="Польща"
-                 class="w-full p-2 border border-green-500 bg-transparent rounded text-white placeholder-gray-400" />
-        </div>
+      <div>
+        <label class="block mb-1 text-green-300">Місце</label>
+        <input id="location" type="text" required placeholder="м. Київ, паб X"
+               class="w-full p-2 border border-green-500 bg-transparent rounded text-white placeholder-gray-400" />
       </div>
 
       <div>
@@ -47,15 +40,9 @@
       </div>
 
       <div>
-        <label class="block mb-1 text-green-300">Локація</label>
-        <input id="location" type="text" required placeholder="м. Київ, кафе 'Goal'"
-               class="w-full p-2 border border-green-500 bg-transparent rounded text-white placeholder-gray-400" />
-      </div>
-
-      <div>
-        <label class="block mb-1 text-green-300">Опис (необов'язково)</label>
-        <textarea id="description" placeholder="Деталі, атмосфера, запрошення..."
-                  class="w-full p-2 border border-green-500 bg-transparent rounded text-white placeholder-gray-400" rows="3"></textarea>
+        <label class="block mb-1 text-green-300">Зображення події (необовʼязково)</label>
+        <input id="image" type="file" accept="image/*"
+               class="w-full p-2 border border-green-500 bg-transparent rounded text-white" />
       </div>
 
       <button type="submit"
@@ -67,8 +54,12 @@
 
   <script src="script.js"></script>
   <script>
+    document.getElementById('createForm').addEventListener('submit', createEvent);
+
     function logout() {
       localStorage.removeItem('token');
+      localStorage.removeItem('userId');
+      localStorage.removeItem('username');
       window.location.href = 'login.html';
     }
   </script>
