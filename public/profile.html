@@ -9,14 +9,18 @@
 </head>
 <body class="min-h-screen bg-gradient-to-br from-green-800 via-green-900 to-gray-900 text-white font-sans">
 
-  <!-- 🧭 Навігація -->
-  <header class="bg-black bg-opacity-80 p-4 shadow-lg flex justify-between items-center">
-    <h1 class="text-2xl font-bold tracking-wide">👤 Мій профіль</h1>
-    <div class="space-x-4">
-      <a href="/" class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded text-white transition">⬅ До подій</a>
-      <button onclick="logout()" class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded text-white">Вийти</button>
-    </div>
-  </header>
+   <!-- 👤 Навігація -->
+  <header class="bg-black bg-opacity-80 text-white p-4 flex justify-between items-center shadow-lg">
+    <h1 class="text-2xl font-bold tracking-wide">🏟️ FanMatch</h1>
+    <nav class="flex gap-2 items-center">
+      <a href="/" class="px-3 py-1 rounded hover:bg-green-600 transition">🏠 Головна</a>
+      <a href="/login" class="px-3 py-1 rounded hover:bg-green-600 transition">🔑 Вхід</a>
+      <a href="/register" class="px-3 py-1 rounded hover:bg-green-600 transition">📝 Реєстрація</a>
+      <a href="/profile" class="px-3 py-1 rounded hover:bg-green-600 transition hidden" id="profileLink">👤 Профіль</a>
+      <a href="/create" class="px-3 py-1 rounded hover:bg-green-600 transition hidden" id="createLink">➕ Створити</a>
+      <button onclick="logout()" id="logoutBtn" class="bg-red-600 hover:bg-red-700 px-3 py-1 rounded hidden">🚪 Вийти</button>
+    </nav>
+  </header>  
 
   <!-- 👤 Інформація -->
   <main class="max-w-4xl mx-auto py-8 px-4">

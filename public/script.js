@@ -165,3 +165,22 @@ document.getElementById('closeEditModal')?.addEventListener('click', closeEditMo
 
 // ================== Завантажити події при завантаженні ==================
 window.onload = loadEvents;
+
+// 👤 Навігація: показати/сховати кнопки залежно від входу
+window.addEventListener('DOMContentLoaded', () => {
+  const username = localStorage.getItem('username');
+  if (username) {
+    document.getElementById('profileLink').style.display = 'inline-block';
+    document.getElementById('createLink').style.display = 'inline-block';
+    document.getElementById('logoutBtn').style.display = 'inline-block';
+  }
+});
+
+// 🚪 Вихід
+function logout() {
+  localStorage.removeItem('token');
+  localStorage.removeItem('userId');
+  localStorage.removeItem('username');
+  window.location.href = '/login';
+}
+
