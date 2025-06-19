@@ -1,4 +1,4 @@
-  <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="uk">
 <head>
   <meta charset="UTF-8" />
@@ -9,7 +9,7 @@
 </head>
 <body class="min-h-screen bg-gradient-to-br from-green-800 via-green-900 to-gray-900 text-white font-sans">
 
-   <!-- 👤 Навігація -->
+  <!-- 🔗 Навігація -->
   <header class="bg-black bg-opacity-80 text-white p-4 flex justify-between items-center shadow-lg">
     <h1 class="text-2xl font-bold tracking-wide">🏟️ FanMatch</h1>
     <nav class="flex gap-2 items-center">
@@ -20,16 +20,12 @@
       <a href="/create" class="px-3 py-1 rounded hover:bg-green-600 transition hidden" id="createLink">➕ Створити</a>
       <button onclick="logout()" id="logoutBtn" class="bg-red-600 hover:bg-red-700 px-3 py-1 rounded hidden">🚪 Вийти</button>
     </nav>
-  </header>  
+  </header>
 
-  <!-- 👤 Інформація -->
   <main class="max-w-4xl mx-auto py-8 px-4">
     <h2 class="text-2xl font-semibold mb-4 text-white">Вітаємо, <span id="username" class="text-green-300 font-bold"></span>!</h2>
-
     <h3 class="text-xl mb-3 text-white">📅 Твої події</h3>
-    <div id="my-events" class="space-y-6">
-      <!-- Події користувача -->
-    </div>
+    <div id="my-events" class="space-y-6"></div>
   </main>
 
   <script>
@@ -42,7 +38,7 @@
 
     async function fetchMyEvents() {
       try {
-        const res = await axios.get('http://localhost:3000/events');
+        const res = await axios.get('/events');
         const events = res.data.filter(e => e.creator_id == userId);
 
         myEventsEl.innerHTML = '';
@@ -56,30 +52,38 @@
           const div = document.createElement('div');
           div.className = 'bg-black bg-opacity-60 border border-green-600 rounded-2xl p-5 shadow-lg transition hover:scale-[1.01]';
           div.innerHTML = `
-            ${event.image ? `<img src="${event.image}" alt="Зображення події" class="w-full h-48 object-cover rounded mb-3">` : ''}
+            ${event.image ? `<img src="${event.image}" class="w-full h-48 object-cover rounded mb-3">` : ''}
             <h4 class="text-xl font-bold text-green-300 mb-2">⚽ ${event.title}</h4>
-            <p class="text-white"><span class="mr-1">📍</span> ${event.location}</p>
-            <p class="text-white"><span class="mr-1">⏰</span> ${new Date(event.time).toLocaleString()}</p>
-            <div class="mt-4 flex flex-wrap gap-2">
+            <p class="text-white">📍 ${event.location}</p>
+            <p class="text-white">⏰ ${new Date(event.time).toLocaleString()}</p>
+            <div class="mt-4 flex gap-2">
               <button onclick="editEvent(${event.id})" class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded">Редагувати</button>
               <button onclick="deleteEvent(${event.id})" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded">Видалити</button>
             </div>
           `;
-          
           myEventsEl.appendChild(div);
         });
       } catch (err) {
         console.error('Не вдалося отримати події:', err);
-        myEventsEl.innerHTML = `<p class="text-red-400">Сталася помилка при завантаженні.</p>`;
+        myEventsEl.innerHTML = `<p class="text-red-400">Помилка при завантаженні.</p>`;
       }
     }
+
+    fetchMyEvents();
+
+    // 🔐 Навігація
+    window.addEventListener('DOMContentLoaded', () => {
+      if (username) {
+        document.getElementById('profileLink')?.classList.remove('hidden');
+        document.getElementById('createLink')?.classList.remove('hidden');
+        document.getElementById('logoutBtn')?.classList.remove('hidden');
+      }
+    });
 
     function logout() {
       localStorage.clear();
       window.location.href = '/login';
     }
-
-    fetchMyEvents();
   </script>
 </body>
 </html>
