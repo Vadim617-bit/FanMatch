@@ -96,6 +96,18 @@ db.serialize(() => {
       FOREIGN KEY (user_id) REFERENCES users(id)
     )
   `);
+
+  db.run(`
+    CREATE TABLE IF NOT EXISTS posts (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      title TEXT NOT NULL,
+      content TEXT NOT NULL,
+      image TEXT,
+      creator_id INTEGER NOT NULL,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (creator_id) REFERENCES users(id)
+    )
+  `);  
 });
 
 // 🔹 Реєстрація
@@ -278,4 +290,43 @@ app.delete('/events/:id', (req, res) => {
     }
   );
 });
+
+// 🔹 Створення поста
+app.post('/posts', upload.single('image'), (req, res) => {
+  const { title, content, creatorId } = req.body;
+  const imagePath = req.file ? `/uploads/${req.file.filename}` : null;
+
+  if (!title || !content || !creatorId) {
+    return res.status(400).json({ error: 'Усі поля (крім зображення) обовʼязкові' });
+  }
+
+  db.run(
+    `INSERT INTO posts (title, content, image, creator_id) VALUES (?, ?, ?, ?)`,
+    [title, content, imagePath, creatorId],
+    function (err) {
+      if (err) {
+        console.error('Помилка при створенні поста:', err.message);
+        return res.status(500).json({ error: 'Не вдалося створити пост' });
+      }
+      res.status(201).json({ postId: this.lastID });
+    }
+  );
+});
+
+// 🔹 Отримання всіх постів
+app.get('/posts', (req, res) => {
+  db.all(`
+    SELECT posts.*, users.username AS author
+    FROM posts
+    JOIN users ON posts.creator_id = users.id
+    ORDER BY created_at DESC
+  `, [], (err, rows) => {
+    if (err) {
+      console.error('Помилка при отриманні постів:', err);
+      return res.status(500).json({ error: 'Не вдалося отримати пости' });
+    }
+    res.json(rows);
+  });
+});
+
 
