@@ -10,18 +10,20 @@
 </head>
 <body class="min-h-screen bg-gradient-to-br from-green-800 via-green-900 to-gray-900 text-white font-sans">
 
+  <!-- 🔗 Навігація -->
   <header class="bg-black bg-opacity-80 text-white p-4 flex justify-between items-center shadow-lg">
     <h1 class="text-2xl font-bold tracking-wide">🏟️ FanMatch</h1>
     <nav class="flex gap-2 items-center">
       <a href="/" class="px-3 py-1 rounded hover:bg-green-600 transition">🏠 Головна</a>
       <a href="/login" class="px-3 py-1 rounded hover:bg-green-600 transition">🔑 Вхід</a>
       <a href="/register" class="px-3 py-1 rounded hover:bg-green-600 transition">📝 Реєстрація</a>
-      <a href="/profile" class="px-3 py-1 rounded hover:bg-green-600 transition" id="profileLink" style="display:none;">👤 Профіль</a>
-      <a href="/create" class="px-3 py-1 rounded hover:bg-green-600 transition" id="createLink" style="display:none;">➕ Створити</a>
+      <a href="/profile" class="px-3 py-1 rounded hover:bg-green-600 transition hidden" id="profileLink">👤 Профіль</a>
+      <a href="/create" class="px-3 py-1 rounded hover:bg-green-600 transition hidden" id="createLink">➕ Створити</a>
       <button onclick="logout()" id="logoutBtn" class="bg-red-600 hover:bg-red-700 px-3 py-1 rounded hidden">🚪 Вийти</button>
     </nav>
   </header>  
 
+  <!-- 🧾 Контент -->
   <main class="max-w-4xl mx-auto py-8 px-4">
     <div class="flex justify-between items-center mb-6">
       <h2 class="text-2xl font-semibold text-white">⚽ Найближчі матчі</h2>
@@ -31,7 +33,7 @@
     <div id="eventsList" class="space-y-6"></div>
   </main>
 
-  <!-- Модальне вікно редагування -->
+  <!-- 📝 Модальне вікно редагування -->
   <div id="editEventModal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 hidden">
     <div class="bg-white text-gray-900 rounded-xl p-6 w-full max-w-md shadow-2xl">
       <h2 class="text-xl font-bold mb-4 text-center text-green-800">Редагувати подію</h2>

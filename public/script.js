@@ -6,10 +6,12 @@ const userInfoElement = document.getElementById('userInfo');
 const eventsListElement = document.getElementById('eventsList');
 
 // ================== Вивід імені користувача ==================
-if (userId && username) {
-  userInfoElement.innerHTML = `Вітаємо, ${username}!`;
-} else {
-  userInfoElement.innerHTML = 'Будь ласка, увійдіть в систему.';
+if (userInfoElement) {
+  if (userId && username) {
+    userInfoElement.innerHTML = `Вітаємо, ${username}!`;
+  } else {
+    userInfoElement.innerHTML = 'Будь ласка, увійдіть в систему.';
+  }
 }
 
 // ================== Вихід з системи ==================
@@ -17,17 +19,17 @@ function logout() {
   localStorage.removeItem('token');
   localStorage.removeItem('userId');
   localStorage.removeItem('username');
-  window.location.href = 'login.html';
+  window.location.href = '/login';
 }
 
-// ================== Створення подій =================
+// ================== Створення подій ==================
 async function createEvent(e) {
   e.preventDefault();
 
   const title = document.getElementById('title').value;
   const location = document.getElementById('location').value;
   const time = document.getElementById('date_time').value;
-  const image = document.getElementById('image').files[0];
+  const image = document.getElementById('image')?.files[0];
   const creatorId = localStorage.getItem('userId');
 
   const formData = new FormData();
@@ -67,10 +69,12 @@ document.getElementById('createEventBtn')?.addEventListener('click', () => {
 // ================== Завантаження подій ==================
 async function loadEvents() {
   try {
-    const response = await axios.get('http://localhost:3000/events');
+    const response = await axios.get('/events');
     const events = response.data;
 
+    if (!eventsListElement) return;
     eventsListElement.innerHTML = '';
+
     events.forEach(event => {
       const eventDiv = document.createElement('div');
       eventDiv.className = 'bg-black bg-opacity-60 border border-green-600 rounded-2xl p-5 shadow-lg transition hover:scale-[1.01]';
@@ -101,7 +105,7 @@ async function loadEvents() {
 // ================== Приєднання до події ==================
 async function joinEvent(eventId) {
   try {
-    const response = await axios.post(`http://localhost:3000/events/${eventId}/join`, { userId });
+    const response = await axios.post(`/events/${eventId}/join`, { userId });
     alert(response.data.message);
   } catch (error) {
     console.error('Не вдалося приєднатися до події', error);
@@ -111,7 +115,7 @@ async function joinEvent(eventId) {
 // ================== Видалення події ==================
 async function deleteEvent(eventId) {
   try {
-    await axios.delete(`http://localhost:3000/events/${eventId}`);
+    await axios.delete(`/events/${eventId}`);
     alert('Подію видалено');
     loadEvents();
   } catch (error) {
@@ -122,7 +126,7 @@ async function deleteEvent(eventId) {
 // ================== Відкриття форми редагування ==================
 async function editEvent(eventId) {
   try {
-    const response = await axios.get(`http://localhost:3000/events/${eventId}`);
+    const response = await axios.get(`/events/${eventId}`);
     const event = response.data;
 
     document.getElementById('editEventId').value = event.id;
@@ -130,7 +134,7 @@ async function editEvent(eventId) {
     document.getElementById('editLocation').value = event.location;
     document.getElementById('editTime').value = event.time;
 
-    document.getElementById('editEventModal').classList.remove('hidden');
+    document.getElementById('editEventModal')?.classList.remove('hidden');
   } catch (error) {
     console.error('Помилка при завантаженні події для редагування', error);
   }
@@ -145,7 +149,7 @@ async function saveEventChanges(e) {
   const time = document.getElementById('editTime').value;
 
   try {
-    await axios.put(`http://localhost:3000/events/${eventId}`, { title, location, time });
+    await axios.put(`/events/${eventId}`, { title, location, time });
     alert('Подію оновлено!');
     loadEvents();
     closeEditModal();
@@ -156,31 +160,23 @@ async function saveEventChanges(e) {
 
 // ================== Закриття модального вікна ==================
 function closeEditModal() {
-  document.getElementById('editEventModal').classList.add('hidden');
+  document.getElementById('editEventModal')?.classList.add('hidden');
 }
 
 // ================== Обробка подій форми редагування ==================
 document.getElementById('editEventForm')?.addEventListener('submit', saveEventChanges);
 document.getElementById('closeEditModal')?.addEventListener('click', closeEditModal);
 
-// ================== Завантажити події при завантаженні ==================
-window.onload = loadEvents;
+// ================== Завантажити події при завантаженні сторінки ==================
+window.onload = () => {
+  if (eventsListElement) loadEvents();
+};
 
 // 👤 Навігація: показати/сховати кнопки залежно від входу
 window.addEventListener('DOMContentLoaded', () => {
-  const username = localStorage.getItem('username');
   if (username) {
-    document.getElementById('profileLink').style.display = 'inline-block';
-    document.getElementById('createLink').style.display = 'inline-block';
-    document.getElementById('logoutBtn').style.display = 'inline-block';
+    document.getElementById('profileLink')?.classList.remove('hidden');
+    document.getElementById('createLink')?.classList.remove('hidden');
+    document.getElementById('logoutBtn')?.classList.remove('hidden');
   }
 });
-
-// 🚪 Вихід
-function logout() {
-  localStorage.removeItem('token');
-  localStorage.removeItem('userId');
-  localStorage.removeItem('username');
-  window.location.href = '/login';
-}
-

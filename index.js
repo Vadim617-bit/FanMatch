@@ -98,11 +98,6 @@ db.serialize(() => {
   `);
 });
 
-// 🔹 Simple check route
-app.get('/', (req, res) => {
-  res.send('FanMatch backend is running!');
-});
-
 // 🔹 Реєстрація
 app.post('/register', async (req, res) => {
   const { username, email, password } = req.body;
