@@ -1,3 +1,4 @@
+// ================== Дані користувача ==================
 const token = localStorage.getItem('token');
 const userId = localStorage.getItem('userId');
 const username = localStorage.getItem('username');
@@ -5,7 +6,6 @@ const username = localStorage.getItem('username');
 const userInfoElement = document.getElementById('userInfo');
 const eventsListElement = document.getElementById('eventsList');
 
-// ================== Вивід імені користувача ==================
 if (userInfoElement) {
   if (userId && username) {
     userInfoElement.innerHTML = `Вітаємо, ${username}!`;
@@ -37,16 +37,10 @@ async function createEvent(e) {
   formData.append('location', location);
   formData.append('time', time);
   formData.append('creatorId', creatorId);
-  if (image) {
-    formData.append('image', image);
-  }
+  if (image) formData.append('image', image);
 
   try {
-    const res = await fetch('/events', {
-      method: 'POST',
-      body: formData
-    });
-
+    const res = await fetch('/events', { method: 'POST', body: formData });
     const data = await res.json();
 
     if (res.ok) {
@@ -71,7 +65,6 @@ async function loadEvents() {
   try {
     const response = await axios.get('/events');
     const events = response.data;
-
     if (!eventsListElement) return;
     eventsListElement.innerHTML = '';
 
@@ -102,7 +95,47 @@ async function loadEvents() {
   }
 }
 
-// ================== Приєднання до події ==================
+// ================== Завантаження постів ==================
+async function loadPosts() {
+  const container = document.getElementById('postsContainer');
+  if (!container) {
+    console.warn('postsContainer не знайдено');
+    return;
+  }
+
+  try {
+    const res = await axios.get('/posts');
+    const posts = res.data;
+
+    console.log('Отримані пости:', posts);
+
+    container.innerHTML = '';
+
+    posts.forEach(post => {
+      const postEl = document.createElement('div');
+      postEl.className = 'bg-black bg-opacity-50 rounded-xl p-5 shadow-md';
+
+      postEl.innerHTML = `
+        ${post.image ? `<img src="${post.image}" alt="Зображення поста" class="w-full max-h-96 object-cover rounded mb-4">` : ''}
+        <h3 class="text-2xl font-bold text-green-300 mb-2">${post.title.replace(/^"|"$/g, '')}</h3>
+        <p class="text-white mb-2">${post.content.replace(/^"|"$/g, '')}</p>
+        <p class="text-sm text-gray-400 italic">👤 ${post.author} | 🕒 ${new Date(post.created_at).toLocaleString()}</p>
+      `;
+
+      container.appendChild(postEl);
+    });
+  } catch (err) {
+    console.error('Помилка при завантаженні постів:', err);
+  }
+}
+
+// ================== Автозапуск ==================
+window.onload = () => {
+  if (eventsListElement) loadEvents();
+  if (document.getElementById('postsContainer')) loadPosts();
+};
+
+// ================== Дії з подіями ==================
 async function joinEvent(eventId) {
   try {
     const response = await axios.post(`/events/${eventId}/join`, { userId });
@@ -112,7 +145,6 @@ async function joinEvent(eventId) {
   }
 }
 
-// ================== Видалення події ==================
 async function deleteEvent(eventId) {
   try {
     await axios.delete(`/events/${eventId}`);
@@ -123,24 +155,20 @@ async function deleteEvent(eventId) {
   }
 }
 
-// ================== Відкриття форми редагування ==================
 async function editEvent(eventId) {
   try {
     const response = await axios.get(`/events/${eventId}`);
     const event = response.data;
-
     document.getElementById('editEventId').value = event.id;
     document.getElementById('editTitle').value = event.title;
     document.getElementById('editLocation').value = event.location;
     document.getElementById('editTime').value = event.time;
-
     document.getElementById('editEventModal')?.classList.remove('hidden');
   } catch (error) {
     console.error('Помилка при завантаженні події для редагування', error);
   }
 }
 
-// ================== Збереження змін події ==================
 async function saveEventChanges(e) {
   e.preventDefault();
   const eventId = document.getElementById('editEventId').value;
@@ -158,21 +186,14 @@ async function saveEventChanges(e) {
   }
 }
 
-// ================== Закриття модального вікна ==================
 function closeEditModal() {
   document.getElementById('editEventModal')?.classList.add('hidden');
 }
 
-// ================== Обробка подій форми редагування ==================
 document.getElementById('editEventForm')?.addEventListener('submit', saveEventChanges);
 document.getElementById('closeEditModal')?.addEventListener('click', closeEditModal);
 
-// ================== Завантажити події при завантаженні сторінки ==================
-window.onload = () => {
-  if (eventsListElement) loadEvents();
-};
-
-// 👤 Навігація: показати/сховати кнопки залежно від входу
+// ================== Показати кнопки в шапці ==================
 window.addEventListener('DOMContentLoaded', () => {
   if (username) {
     document.getElementById('profileLink')?.classList.remove('hidden');
@@ -180,3 +201,41 @@ window.addEventListener('DOMContentLoaded', () => {
     document.getElementById('logoutBtn')?.classList.remove('hidden');
   }
 });
+
+// ================== Створення постів ==================
+const postForm = document.getElementById('postForm');
+if (postForm) {
+  postForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const title = document.getElementById('postTitle').value;
+    const content = document.getElementById('postContent').value;
+    const image = document.getElementById('postImage').files[0];
+    const creatorId = localStorage.getItem('userId');
+
+    const formData = new FormData();
+    formData.append('title', title);
+    formData.append('content', content);
+    formData.append('creatorId', creatorId);
+    if (image) formData.append('image', image);
+
+    try {
+      const res = await fetch('/posts', {
+        method: 'POST',
+        body: formData
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        alert('Пост створено успішно!');
+        window.location.href = '/posts.html';
+      } else {
+        alert(data.error || 'Помилка при створенні поста');
+      }
+    } catch (err) {
+      console.error('Помилка запиту:', err);
+      alert('Не вдалося зʼєднатися з сервером');
+    }
+  });
+}
