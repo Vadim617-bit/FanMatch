@@ -16,8 +16,8 @@
       <a href="/" class="px-3 py-1 rounded hover:bg-green-600 transition">🏠 Головна</a>
       <a href="/login" class="px-3 py-1 rounded hover:bg-green-600 transition">🔑 Вхід</a>
       <a href="/register" class="px-3 py-1 rounded hover:bg-green-600 transition">📝 Реєстрація</a>
-      <a href="/profile" class="px-3 py-1 rounded hover:bg-green-600 transition hidden" id="profileLink">👤 Профіль</a>
-      <a href="/create" class="px-3 py-1 rounded hover:bg-green-600 transition hidden" id="createLink">➕ Створити</a>
+      <a href="/profile" id="profileLink" class="px-3 py-1 rounded hover:bg-green-600 transition hidden">👤 Профіль</a>
+      <a href="/create" id="createLink" class="px-3 py-1 rounded hover:bg-green-600 transition hidden">➕ Створити</a>
       <button onclick="logout()" id="logoutBtn" class="bg-red-600 hover:bg-red-700 px-3 py-1 rounded hidden">🚪 Вийти</button>
     </nav>
   </header>
@@ -34,7 +34,9 @@
     const userId = localStorage.getItem('userId');
     const username = localStorage.getItem('username');
 
-    usernameEl.textContent = username;
+    if (username) {
+      usernameEl.textContent = username;
+    }
 
     async function fetchMyEvents() {
       try {

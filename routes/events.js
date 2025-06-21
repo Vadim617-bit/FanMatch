@@ -8,11 +8,15 @@ const SECRET_KEY = 'supersecret123';
 // Middleware для перевірки токена
 function authenticateToken(req, res, next) {
   const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
-  if (!token) return res.sendStatus(401);
+  const token = authHeader ? authHeader.split(' ')[1] : null;
+  if (!token) {
+    return res.sendStatus(401);
+  }
 
   jwt.verify(token, SECRET_KEY, (err, user) => {
-    if (err) return res.sendStatus(403);
+    if (err) {
+      return res.sendStatus(403);
+    }
     req.user = user;
     next();
   });
@@ -27,7 +31,9 @@ router.post('/', authenticateToken, (req, res) => {
      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
     [title, team1, team2, date_time, location, description, max_participants, req.user.userId],
     function (err) {
-      if (err) return res.status(500).json({ error: err.message });
+      if (err) {
+        return res.status(500).json({ error: err.message });
+      }
       res.json({ eventId: this.lastID });
     }
   );
@@ -36,7 +42,9 @@ router.post('/', authenticateToken, (req, res) => {
 // 🔹 Отримати список подій
 router.get('/', (req, res) => {
   db.all(`SELECT * FROM events ORDER BY date_time ASC`, [], (err, rows) => {
-    if (err) return res.status(500).json({ error: err.message });
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
     res.json(rows);
   });
 });
@@ -47,13 +55,17 @@ router.post('/:id/join', authenticateToken, (req, res) => {
   const userId = req.user.userId;
 
   db.get(`SELECT * FROM event_participants WHERE event_id = ? AND user_id = ?`, [eventId, userId], (err, existing) => {
-    if (existing) return res.status(400).json({ error: 'Ви вже приєдналися' });
+    if (existing) {
+      return res.status(400).json({ error: 'Ви вже приєдналися' });
+    }
 
     db.run(
       `INSERT INTO event_participants (event_id, user_id) VALUES (?, ?)`,
       [eventId, userId],
       function (err) {
-        if (err) return res.status(500).json({ error: err.message });
+        if (err) {
+          return res.status(500).json({ error: err.message });
+        }
         res.json({ success: true });
       }
     );
@@ -71,7 +83,9 @@ router.get('/:id/participants', (req, res) => {
      WHERE event_participants.event_id = ?`,
     [eventId],
     (err, rows) => {
-      if (err) return res.status(500).json({ error: err.message });
+      if (err) {
+        return res.status(500).json({ error: err.message });
+      }
       res.json(rows);
     }
   );

@@ -26,7 +26,16 @@
   <!-- 📋 Контент -->
   <main class="max-w-5xl mx-auto p-6">
     <h2 class="text-3xl font-semibold mb-6">📰 Футбольні пости</h2>
-    <div id="postsContainer" class="space-y-8"></div>
+    <div id="postsContainer" class="space-y-8">
+      <!-- Ensure posts are loaded by calling loadPosts() on page load -->
+      <script>
+        document.addEventListener('DOMContentLoaded', () => {
+          if (document.getElementById('postsContainer')) {
+            loadPosts();
+          }
+        });
+      </script>
+    </div>
   </main>
 
 </body>

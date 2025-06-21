@@ -14,8 +14,8 @@
       <a href="/" class="px-3 py-1 rounded hover:bg-green-600 transition">🏠 Головна</a>
       <a href="/login" class="px-3 py-1 rounded hover:bg-green-600 transition">🔑 Вхід</a>
       <a href="/register" class="px-3 py-1 rounded hover:bg-green-600 transition">📝 Реєстрація</a>
-      <a href="/profile" class="px-3 py-1 rounded hover:bg-green-600 transition hidden" id="profileLink">👤 Профіль</a>
-      <a href="/create" class="px-3 py-1 rounded hover:bg-green-600 transition hidden" id="createLink">➕ Створити</a>
+      <a href="/profile" id="profileLink" class="px-3 py-1 rounded hover:bg-green-600 transition hidden">👤 Профіль</a>
+      <a href="/create" id="createLink" class="px-3 py-1 rounded hover:bg-green-600 transition hidden">➕ Створити</a>
       <button onclick="logout()" id="logoutBtn" class="bg-red-600 hover:bg-red-700 px-3 py-1 rounded hidden">🚪 Вийти</button>
     </nav>
   </header>  
@@ -26,25 +26,25 @@
     <form id="createForm" class="space-y-4 bg-black bg-opacity-60 p-6 rounded-xl shadow-xl">
 
       <div>
-        <label class="block mb-1 text-green-300">Назва події</label>
+        <label for="title" class="block mb-1 text-green-300">Назва події</label>
         <input id="title" type="text" required placeholder="Наприклад: Перегляд фіналу"
                class="w-full p-2 border border-green-500 bg-transparent rounded text-white placeholder-gray-400" />
       </div>
 
       <div>
-        <label class="block mb-1 text-green-300">Місце</label>
+        <label for="location" class="block mb-1 text-green-300">Місце</label>
         <input id="location" type="text" required placeholder="м. Київ, паб X"
                class="w-full p-2 border border-green-500 bg-transparent rounded text-white placeholder-gray-400" />
       </div>
 
       <div>
-        <label class="block mb-1 text-green-300">Дата і час</label>
+        <label for="date_time" class="block mb-1 text-green-300">Дата і час</label>
         <input id="date_time" type="datetime-local" required
                class="w-full p-2 border border-green-500 bg-transparent rounded text-white" />
       </div>
 
       <div>
-        <label class="block mb-1 text-green-300">Зображення події (необовʼязково)</label>
+        <label for="image" class="block mb-1 text-green-300">Зображення події (необовʼязково)</label>
         <input id="image" type="file" accept="image/*"
                class="w-full p-2 border border-green-500 bg-transparent rounded text-white" />
       </div>
@@ -64,7 +64,7 @@
       localStorage.removeItem('token');
       localStorage.removeItem('userId');
       localStorage.removeItem('username');
-      window.location.href = 'login.html';
+      window.location.href = '/login';
     }
   </script>
 </body>

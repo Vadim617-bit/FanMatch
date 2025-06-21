@@ -21,15 +21,15 @@ const storage = multer.diskStorage({
     cb(null, uploadDir);
   },
   filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1E9)}`;
     const ext = path.extname(file.originalname);
     cb(null, `${file.fieldname}-${uniqueSuffix}${ext}`);
   }
 });
 const upload = multer({ storage });
 
-// Віддавати зображення як статику
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+// Serve uploaded images as static files
+app.use('/uploads', express.static(uploadDir));
 
 
 // Додати віддавання статичних файлів

@@ -7,18 +7,12 @@ const eventsListElement = document.getElementById('eventsList');
 
 // ================== Вивід імені користувача ==================
 if (userInfoElement) {
-  if (userId && username) {
-    userInfoElement.innerHTML = `Вітаємо, ${username}!`;
-  } else {
-    userInfoElement.innerHTML = 'Будь ласка, увійдіть в систему.';
-  }
+  userInfoElement.innerHTML = userId && username ? `Вітаємо, ${username}!` : 'Будь ласка, увійдіть в систему.';
 }
 
 // ================== Вихід з системи ==================
 function logout() {
-  localStorage.removeItem('token');
-  localStorage.removeItem('userId');
-  localStorage.removeItem('username');
+  ['token', 'userId', 'username'].forEach(item => localStorage.removeItem(item));
   window.location.href = '/login';
 }
 
@@ -37,9 +31,7 @@ async function createEvent(e) {
   formData.append('location', location);
   formData.append('time', time);
   formData.append('creatorId', creatorId);
-  if (image) {
-    formData.append('image', image);
-  }
+  if (image) formData.append('image', image);
 
   try {
     const res = await fetch('/events', {
@@ -76,9 +68,7 @@ if (postForm) {
     formData.append('title', title);
     formData.append('content', content);
     formData.append('creatorId', creatorId);
-    if (image) {
-      formData.append('image', image);
-    }
+    if (image) formData.append('image', image);
 
     try {
       const res = await fetch('/posts', {
@@ -240,8 +230,6 @@ window.onload = () => {
 // ================== Навігація — показати приховані кнопки ==================
 window.addEventListener('DOMContentLoaded', () => {
   if (username) {
-    document.getElementById('profileLink')?.classList.remove('hidden');
-    document.getElementById('createLink')?.classList.remove('hidden');
-    document.getElementById('logoutBtn')?.classList.remove('hidden');
+    ['profileLink', 'createLink', 'logoutBtn'].forEach(id => document.getElementById(id)?.classList.remove('hidden'));
   }
 });
