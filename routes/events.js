@@ -24,12 +24,17 @@ function authenticateToken(req, res, next) {
 
 // 🔹 Створити подію
 router.post('/', authenticateToken, (req, res) => {
-  const { title, team1, team2, date_time, location, description, max_participants } = req.body;
+  const { title, team1, team2, date_time, location, description, max_participants, imageUrl } = req.body;
+
+  // Check for required fields
+  if (!title || !team1 || !team2 || !date_time || !location) {
+    return res.status(400).json({ error: 'Всі обов’язкові поля повинні бути заповнені' });
+  }
 
   db.run(
-    `INSERT INTO events (title, team1, team2, date_time, location, description, max_participants, creator_id)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-    [title, team1, team2, date_time, location, description, max_participants, req.user.userId],
+    `INSERT INTO events (title, team1, team2, date_time, location, description, max_participants, creator_id, image_url)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [title, team1, team2, date_time, location, description, max_participants, req.user.userId, imageUrl],
     function (err) {
       if (err) {
         return res.status(500).json({ error: err.message });

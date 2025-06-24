@@ -33,7 +33,42 @@
           if (document.getElementById('postsContainer')) {
             loadPosts();
           }
+          // Ensure create event button is functional
+          const createEventBtn = document.getElementById('createEventBtn');
+          if (createEventBtn) {
+            createEventBtn.addEventListener('click', () => {
+              window.location.href = '/create.html';
+            });
+          }
         });
+
+        function loadPosts() {
+          axios.get('/api/posts')
+            .then(response => {
+              const posts = response.data;
+              const postsContainer = document.getElementById('postsContainer');
+              postsContainer.innerHTML = ''; // Clear existing posts
+              posts.forEach(post => {
+                const postElement = document.createElement('div');
+                postElement.classList.add('bg-white', 'bg-opacity-10', 'p-4', 'rounded', 'shadow-lg', 'flex', 'gap-4', 'items-start');
+                
+                const imgElement = document.createElement('img');
+                imgElement.src = post.imageUrl || 'default-image.jpg'; // Ensure a default image is used if imageUrl is not provided
+                imgElement.alt = 'Post Image';
+                imgElement.classList.add('w-32', 'h-32', 'object-cover', 'rounded');
+                
+                const contentElement = document.createElement('div');
+                contentElement.innerHTML = `<h3 class="text-xl font-bold">${post.title}</h3><p>${post.content}</p>`;
+                
+                postElement.appendChild(imgElement);
+                postElement.appendChild(contentElement);
+                postsContainer.appendChild(postElement);
+              });
+            })
+            .catch(error => {
+              console.error('Error loading posts:', error);
+            });
+        }
       </script>
     </div>
   </main>

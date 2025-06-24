@@ -31,7 +31,6 @@ const upload = multer({ storage });
 // Serve uploaded images as static files
 app.use('/uploads', express.static(uploadDir));
 
-
 // Додати віддавання статичних файлів
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -62,6 +61,7 @@ const db = new sqlite3.Database('./database.db', (err) => {
     console.error('Помилка при відкритті бази даних', err);
   } else {
     console.log('Підключено до бази даних SQLite');
+    console.log('📁 Шлях до БД:', path.join(__dirname, 'database.db'));
   }
 });
 
@@ -83,6 +83,7 @@ db.serialize(() => {
       location TEXT NOT NULL,
       time TEXT NOT NULL,
       creator_id INTEGER NOT NULL,
+      image TEXT,
       FOREIGN KEY (creator_id) REFERENCES users(id)
     )
   `);
@@ -257,7 +258,6 @@ app.get('/events/:id', (req, res) => {
   );
 });
 
-
 // 🔁 Оновлення події
 app.put('/events/:id', (req, res) => {
   const eventId = req.params.id;
@@ -325,8 +325,13 @@ app.get('/posts', (req, res) => {
       console.error('Помилка при отриманні постів:', err);
       return res.status(500).json({ error: 'Не вдалося отримати пости' });
     }
-    res.json(rows);
+    // Ensure image paths are correctly prefixed for client access
+    const postsWithImagePaths = rows.map(post => {
+      if (post.image) {
+        post.image = `${req.protocol}://${req.get('host')}${post.image}`;
+      }
+      return post;
+    });
+    res.json(postsWithImagePaths);
   });
 });
-
-

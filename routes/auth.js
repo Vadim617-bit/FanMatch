@@ -48,4 +48,30 @@ router.post('/login', (req, res) => {
   });
 });
 
+// 🔹 Створення події
+router.post('/events', (req, res) => {
+  const { title, location, time, creatorId } = req.body;
+  if (!title || !location || !time || !creatorId) {
+    return res.status(400).json({ error: 'Усі поля обовʼязкові' });
+  }
+
+  const query = `INSERT INTO events (title, location, time, creator_id) VALUES (?, ?, ?, ?)`;
+  db.run(query, [title, location, time, creatorId], function (err) {
+    if (err) {
+      return res.status(500).json({ error: 'Помилка створення події' });
+    }
+    res.json({ eventId: this.lastID });
+  });
+});
+
+// 🔹 Отримання постів
+router.get('/posts', (req, res) => {
+  db.all(`SELECT * FROM posts`, [], (err, posts) => {
+    if (err) {
+      return res.status(500).json({ error: 'Помилка отримання постів' });
+    }
+    res.json(posts);
+  });
+});
+
 module.exports = router;

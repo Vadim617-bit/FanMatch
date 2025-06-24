@@ -26,6 +26,11 @@ async function createEvent(e) {
   const image = document.getElementById('image')?.files[0];
   const creatorId = localStorage.getItem('userId');
 
+  if (!title || !location || !time || !creatorId) {
+    alert('Усі поля (крім зображення) обовʼязкові');
+    return;
+  }
+
   const formData = new FormData();
   formData.append('title', title);
   formData.append('location', location);
@@ -34,18 +39,17 @@ async function createEvent(e) {
   if (image) formData.append('image', image);
 
   try {
-    const res = await fetch('/events', {
-      method: 'POST',
-      body: formData
+    const res = await axios.post('/events', formData, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
     });
 
-    const data = await res.json();
-
-    if (res.ok) {
+    if (res.status === 200) {
       alert('Подію створено!');
       window.location.href = '/';
     } else {
-      alert(data.error || 'Помилка створення події');
+      alert(res.data.error || 'Помилка створення події');
     }
   } catch (err) {
     console.error(err);
@@ -61,7 +65,7 @@ if (postForm) {
 
     const title = document.getElementById('postTitle').value;
     const content = document.getElementById('postContent').value;
-    const image = document.getElementById('postImage').files[0];
+    const image = document.getElementById('postImage')?.files[0];
     const creatorId = localStorage.getItem('userId');
 
     const formData = new FormData();
@@ -94,7 +98,11 @@ if (postForm) {
 // ================== Завантаження подій ==================
 async function loadEvents() {
   try {
-    const response = await axios.get('/events');
+    const response = await axios.get('/events', {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
     const events = response.data;
 
     if (!eventsListElement) return;
@@ -160,7 +168,11 @@ async function loadPosts() {
 // ================== Приєднання до події ==================
 async function joinEvent(eventId) {
   try {
-    const response = await axios.post(`/events/${eventId}/join`, { userId });
+    const response = await axios.post(`/events/${eventId}/join`, { userId }, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
     alert(response.data.message);
   } catch (error) {
     console.error('Не вдалося приєднатися до події', error);
@@ -170,7 +182,11 @@ async function joinEvent(eventId) {
 // ================== Видалення події ==================
 async function deleteEvent(eventId) {
   try {
-    await axios.delete(`/events/${eventId}`);
+    await axios.delete(`/events/${eventId}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
     alert('Подію видалено');
     loadEvents();
   } catch (error) {
@@ -181,7 +197,11 @@ async function deleteEvent(eventId) {
 // ================== Відкриття форми редагування ==================
 async function editEvent(eventId) {
   try {
-    const response = await axios.get(`/events/${eventId}`);
+    const response = await axios.get(`/events/${eventId}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
     const event = response.data;
 
     document.getElementById('editEventId').value = event.id;
@@ -204,7 +224,11 @@ async function saveEventChanges(e) {
   const time = document.getElementById('editTime').value;
 
   try {
-    await axios.put(`/events/${eventId}`, { title, location, time });
+    await axios.put(`/events/${eventId}`, { title, location, time }, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
     alert('Подію оновлено!');
     loadEvents();
     closeEditModal();

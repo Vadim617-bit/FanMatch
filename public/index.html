@@ -31,6 +31,12 @@
     </div>
 
     <div id="eventsList" class="space-y-6"></div>
+    
+    <!-- 📰 Пости -->
+    <section class="mt-12">
+      <h2 class="text-2xl font-semibold text-white mb-4">📰 Останні пости</h2>
+      <div id="postsContainer" class="space-y-8"></div>
+    </section>
   </main>
 
   <!-- 📝 Модальне вікно редагування -->
@@ -58,6 +64,43 @@
       </form>
     </div>
   </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      loadPosts();
+      document.getElementById('createEventBtn').addEventListener('click', () => {
+        window.location.href = '/create';
+      });
+    });
+
+    function loadPosts() {
+      axios.get('/api/posts')
+        .then(response => {
+          const posts = response.data;
+          const postsContainer = document.getElementById('postsContainer');
+          postsContainer.innerHTML = ''; // Clear existing posts
+          posts.forEach(post => {
+            const postElement = document.createElement('div');
+            postElement.classList.add('bg-white', 'bg-opacity-10', 'p-4', 'rounded', 'shadow-lg', 'flex', 'gap-4', 'items-start');
+            
+            const imgElement = document.createElement('img');
+            imgElement.src = post.imageUrl;
+            imgElement.alt = 'Post Image';
+            imgElement.classList.add('w-32', 'h-32', 'object-cover', 'rounded');
+            
+            const contentElement = document.createElement('div');
+            contentElement.innerHTML = `<h3 class="text-lg font-bold">${post.title}</h3><p>${post.content}</p>`;
+            
+            postElement.appendChild(imgElement);
+            postElement.appendChild(contentElement);
+            postsContainer.appendChild(postElement);
+          });
+        })
+        .catch(error => {
+          console.error('Error loading posts:', error);
+        });
+    }
+  </script>
 
 </body>
 </html>
