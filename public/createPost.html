@@ -43,41 +43,5 @@
     </form>
   </main>
 
-  <script>
-    document.getElementById('postForm').addEventListener('submit', createPost);
-
-    function createPost(event) {
-      event.preventDefault();
-      const formData = new FormData();
-      formData.append('title', document.getElementById('postTitle').value);
-      formData.append('content', document.getElementById('postContent').value);
-      const imageFile = document.getElementById('postImage').files[0];
-      if (imageFile) {
-        formData.append('image', imageFile);
-      }
-
-      axios.post('/posts', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      })
-      .then(response => {
-        console.log('Пост успішно створено:', response.data);
-        window.location.href = '/posts.html'; // Redirect to posts page
-      })
-      .catch(error => {
-        console.error('Помилка при створенні поста:', error);
-      });
-    }
-
-    function logout() {
-      localStorage.removeItem('token');
-      localStorage.removeItem('userId');
-      localStorage.removeItem('username');
-      window.location.href = '/login';
-    }
-  </script>
-
 </body>
 </html>
