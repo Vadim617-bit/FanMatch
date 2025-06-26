@@ -51,6 +51,10 @@ app.get('/profile', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'profile.html'));
 });
 
+app.get('/create', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'create.html'));
+});
+
 // Middleware
 app.use(cors());
 app.use(express.json());
