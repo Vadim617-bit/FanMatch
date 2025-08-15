@@ -84,7 +84,7 @@
             postElement.classList.add('bg-white', 'bg-opacity-10', 'p-4', 'rounded', 'shadow-lg', 'flex', 'gap-4', 'items-start');
             
             const imgElement = document.createElement('img');
-            imgElement.src = post.imageUrl;
+            imgElement.src = post.image ? post.image : '/default.jpg';
             imgElement.alt = 'Post Image';
             imgElement.classList.add('w-32', 'h-32', 'object-cover', 'rounded');
             

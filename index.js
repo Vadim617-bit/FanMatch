@@ -1,3 +1,4 @@
+// Start of Selection
 const express = require('express');
 const sqlite3 = require('sqlite3').verbose();
 const cors = require('cors');
@@ -8,6 +9,9 @@ const port = 3000;
 const path = require('path');
 const multer = require('multer');
 const fs = require('fs');
+
+// 🔐 NEW: з .env або фолбек
+const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret';
 
 // Створити директорію uploads, якщо не існує
 const uploadDir = path.join(__dirname, 'uploads');
@@ -77,8 +81,26 @@ db.serialize(() => {
       username TEXT NOT NULL,
       email TEXT UNIQUE NOT NULL,
       password TEXT NOT NULL
+      -- role додаємо нижче через ALTER TABLE, щоб не ламати існуючі інсталяції
     )
   `);
+
+  // 🔧 NEW: додати колонку role, якщо її ще немає
+  db.get(`PRAGMA table_info(users)`, [], (err) => {
+    if (err) {
+      console.error('PRAGMA error:', err);
+    } else {
+      db.all(`PRAGMA table_info(users)`, [], (_e, cols) => {
+        const hasRole = cols?.some(c => c.name === 'role');
+        if (!hasRole) {
+          db.run(`ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'user'`, (e2) => {
+            if (e2) console.warn('ALTER users ADD role warning:', e2.message);
+            else console.log('Колонку role додано до users (default user)');
+          });
+        }
+      });
+    }
+  });
 
   db.run(`
     CREATE TABLE IF NOT EXISTS events (
@@ -112,12 +134,60 @@ db.serialize(() => {
       created_at TEXT DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (creator_id) REFERENCES users(id)
     )
-  `);  
+  `);
 });
+
+// 🔐 NEW: seed admin (разово створить, якщо немає)
+(function seedAdminOnce() {
+  const adminEmail = 'admin@fanmatch.local';
+  const adminPassHash = bcrypt.hashSync('Admin123!', 10); // ⚠️ заміни пароль у продакшні
+
+  db.get(`SELECT id FROM users WHERE email = ?`, [adminEmail], (err, row) => {
+    if (err) {
+      console.error('Помилка перевірки адміна:', err);
+      return;
+    }
+    if (!row) {
+      db.run(
+        `INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, 'admin')`,
+        ['Admin', adminEmail, adminPassHash],
+        function (e2) {
+          if (e2) console.error('Помилка створення адміна:', e2);
+          else console.log(`✅ Створено адміністратора: ${adminEmail} / Admin123! (заміни)`);
+        }
+      );
+    }
+  });
+})();
+
+// 🔒 NEW: JWT middleware
+function authenticateToken(req, res, next) {
+  const authHeader = req.headers['authorization'];
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Токен відсутній' });
+  }
+  const token = authHeader.split(' ')[1];
+  jwt.verify(token, JWT_SECRET, (err, payload) => {
+    if (err) return res.status(403).json({ error: 'Недійсний або прострочений токен' });
+    req.user = payload; // { id, role }
+    next();
+  });
+}
+
+// 🔒 NEW: перевірка ролі admin
+function isAdmin(req, res, next) {
+  // Довіряємось JWT, але перепровіримо в БД (на випадок зміни ролі)
+  db.get(`SELECT role FROM users WHERE id = ?`, [req.user?.id], (err, row) => {
+    if (err || !row) return res.status(403).json({ error: 'Користувача не знайдено' });
+    if (row.role !== 'admin') return res.status(403).json({ error: 'Доступ лише для адміністраторів' });
+    next();
+  });
+}
 
 // 🔹 Реєстрація
 app.post('/register', async (req, res) => {
   const { username, email, password } = req.body;
+  if (!username || !email || !password) return res.status(400).json({ error: 'Усі поля обовʼязкові' });
   const hashedPassword = await bcrypt.hash(password, 10);
 
   db.get(`SELECT * FROM users WHERE email = ?`, [email], (err, row) => {
@@ -131,7 +201,7 @@ app.post('/register', async (req, res) => {
     }
 
     db.run(
-      `INSERT INTO users (username, email, password) VALUES (?, ?, ?)`,
+      `INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, 'user')`,
       [username, email, hashedPassword],
       function (err) {
         if (err) {
@@ -144,7 +214,7 @@ app.post('/register', async (req, res) => {
   });
 });
 
-// 🔹 Логін
+// 🔹 Логін (оновлено: додаємо role у відповідь і в токен)
 app.post('/login', (req, res) => {
   const { email, password } = req.body;
 
@@ -158,23 +228,27 @@ app.post('/login', (req, res) => {
       return res.status(401).json({ error: 'Невірний email або пароль' });
     }
 
-    const token = jwt.sign({ id: user.id }, 'your_jwt_secret');
-    res.json({ token, username: user.username, userId: user.id });
+    // 🔐 NEW: підписуємо { id, role } єдиним секретом
+    const token = jwt.sign({ id: user.id, role: user.role || 'user' }, JWT_SECRET, {
+      expiresIn: process.env.TOKEN_EXPIRES || '30d'
+    });
+    res.json({ token, username: user.username, userId: user.id, role: user.role || 'user' });
   });
 });
 
-// 🔹 Створення події
-app.post('/events', upload.single('image'), (req, res) => {
-  const { title, location, time, creatorId } = req.body;
+// 🔹 Створення події (ЗАХИСТ: тільки адмін)
+app.post('/events', authenticateToken, isAdmin, upload.single('image'), (req, res) => {
+  const { title, location, time, creatorId } = req.body; // creatorId лишаємо для сумісності
   const imagePath = req.file ? `/uploads/${req.file.filename}` : null;
 
-  if (!title || !location || !time || !creatorId) {
+  if (!title || !location || !time) {
     return res.status(400).json({ error: 'Усі поля обовʼязкові' });
   }
 
+  const creator_id = req.user?.id || creatorId; // пріоритет — токен
   db.run(
     `INSERT INTO events (title, location, time, creator_id, image) VALUES (?, ?, ?, ?, ?)`,
-    [title, location, time, creatorId, imagePath],
+    [title, location, time, creator_id, imagePath],
     function (err) {
       if (err) {
         console.error('Помилка додавання події:', err.message);
@@ -195,10 +269,10 @@ app.get('/events', (req, res) => {
   });
 });
 
-// 🔹 Приєднання до події
-app.post('/events/:id/join', (req, res) => {
+// 🔹 Приєднання до події (ЗАХИСТ: потрібен акаунт)
+app.post('/events/:id/join', authenticateToken, (req, res) => {
   const eventId = req.params.id;
-  const { userId } = req.body;
+  const userId = req.user.id; // перестаємо довіряти body
 
   // Перевірка, чи вже приєднаний
   db.get(
@@ -262,8 +336,8 @@ app.get('/events/:id', (req, res) => {
   );
 });
 
-// 🔁 Оновлення події
-app.put('/events/:id', (req, res) => {
+// 🔁 Оновлення події (ЗАХИСТ: тільки адмін)
+app.put('/events/:id', authenticateToken, isAdmin, (req, res) => {
   const eventId = req.params.id;
   const { title, location, time } = req.body;
 
@@ -279,8 +353,8 @@ app.put('/events/:id', (req, res) => {
   );
 });
 
-// ❌ Видалення події
-app.delete('/events/:id', (req, res) => {
+// ❌ Видалення події (ЗАХИСТ: тільки адмін)
+app.delete('/events/:id', authenticateToken, isAdmin, (req, res) => {
   const eventId = req.params.id;
 
   db.run(
@@ -295,18 +369,19 @@ app.delete('/events/:id', (req, res) => {
   );
 });
 
-// 🔹 Створення поста
-app.post('/posts', upload.single('image'), (req, res) => {
+// 🔹 Створення поста (ЗАХИСТ: тільки адмін)
+app.post('/posts', authenticateToken, isAdmin, upload.single('image'), (req, res) => {
   const { title, content, creatorId } = req.body;
   const imagePath = req.file ? `/uploads/${req.file.filename}` : null;
 
-  if (!title || !content || !creatorId) {
+  if (!title || !content) {
     return res.status(400).json({ error: 'Усі поля (крім зображення) обовʼязкові' });
   }
 
+  const creator_id = req.user?.id || creatorId; // пріоритет токену
   db.run(
     `INSERT INTO posts (title, content, image, creator_id) VALUES (?, ?, ?, ?)`,
-    [title, content, imagePath, creatorId],
+    [title, content, imagePath, creator_id],
     function (err) {
       if (err) {
         console.error('Помилка при створенні поста:', err.message);
@@ -331,7 +406,59 @@ app.get('/posts', (req, res) => {
     }
     // Ensure image paths are correctly prefixed for client access
     const postsWithImagePaths = rows.map(post => {
-      if (post.image) {
+      if (post.image && !post.image.startsWith('http')) {
+        post.image = `${req.protocol}://${req.get('host')}${post.image}`;
+      }
+      return post;
+    });
+    res.json(postsWithImagePaths);
+  });
+});
+
+// ✅ Новий маршрут для AI-новин (ЗАХИСТ: тільки адмін / для Make)
+app.post('/api/ai-posts', authenticateToken, isAdmin, (req, res) => {
+  const { title, content, image, author } = req.body;
+
+  console.log('📥 AI POST DATA:', { title, content, image, author });
+
+  if (!title || !content) {
+    return res.status(400).json({ error: 'Title and content are required.' });
+  }
+
+  const creatorIdFromToken = req.user?.id || 1; // fallback, але має бути з токену
+  db.run(
+    'INSERT INTO posts (title, content, image, creator_id) VALUES (?, ?, ?, ?)',
+    [title, content, image || null, creatorIdFromToken],
+    function (err) {
+      if (err) {
+        console.error('❌ SQLite error:', err.message);
+        return res.status(500).json({ error: err.message });
+      }
+      res.status(201).json({
+        id: this.lastID,
+        title,
+        content,
+        image: image ? `${req.protocol}://${req.get('host')}${image}` : null, // Ensure image path is correctly prefixed
+        author
+      });
+    }
+  );
+});
+
+// Проксі для /api/posts (альтернативний шлях до /posts)
+app.get('/api/posts', (req, res) => {
+  db.all(`
+    SELECT posts.*, users.username AS author
+    FROM posts
+    JOIN users ON posts.creator_id = users.id
+    ORDER BY created_at DESC
+  `, [], (err, rows) => {
+    if (err) {
+      console.error('Помилка при отриманні постів:', err);
+      return res.status(500).json({ error: 'Не вдалося отримати пости' });
+    }
+    const postsWithImagePaths = rows.map(post => {
+      if (post.image && !post.image.startsWith('http')) {
         post.image = `${req.protocol}://${req.get('host')}${post.image}`;
       }
       return post;
