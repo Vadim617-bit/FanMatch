@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <title>Вхід адміністратора</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #e9ecef; }
+    .login-container {
+      width: 340px;
+      margin: 100px auto;
+      padding: 30px;
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 0 12px rgba(0,0,0,0.2);
+    }
+    h2 { text-align: center; }
+    input { width: 100%; padding: 12px; margin: 10px 0; }
+    button { width: 100%; padding: 12px; background: #28a745; color: #fff; border: none; border-radius: 5px; }
+    button:hover { background: #218838; }
+    .error { color: red; text-align: center; margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <div class="login-container">
+    <h2>Вхід адміністратора</h2>
+    <input type="email" id="email" placeholder="Email" required />
+    <input type="password" id="password" placeholder="Пароль" required />
+    <button onclick="adminLogin()">Увійти</button>
+    <div id="error" class="error"></div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <script>
+    function adminLogin() {
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value.trim();
+
+      axios.post('/admin-login', { email, password })
+        .then(res => {
+          if (res.data.token && res.data.isAdmin) {
+            localStorage.setItem('token', res.data.token);
+            localStorage.setItem('userId', res.data.userId);
+            localStorage.setItem('username', res.data.username);
+            // редірект для адміна
+            window.location.href = "/admin.html";
+          } else {
+            document.getElementById('error').textContent = "Недостатньо прав для доступу";
+          }
+        })
+        .catch(err => {
+          document.getElementById('error').textContent = "Невірний email або пароль";
+          console.error("Admin login error:", err);
+        });
+    }
+  </script>
+</body>
+</html>

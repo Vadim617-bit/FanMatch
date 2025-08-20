@@ -15,10 +15,10 @@
     <h1 class="text-2xl font-bold tracking-wide">🏟️ FanMatch</h1>
     <nav class="flex gap-2 items-center">
       <a href="/" class="px-3 py-1 rounded hover:bg-green-600 transition">🏠 Головна</a>
-      <a href="/login" class="px-3 py-1 rounded hover:bg-green-600 transition">🔑 Вхід</a>
-      <a href="/register" class="px-3 py-1 rounded hover:bg-green-600 transition">📝 Реєстрація</a>
+      <a href="/login" id="loginLink" class="px-3 py-1 rounded hover:bg-green-600 transition">🔑 Вхід</a>
+      <a href="/register" id="registerLink" class="px-3 py-1 rounded hover:bg-green-600 transition">📝 Реєстрація</a>
       <a href="/profile" id="profileLink" class="px-3 py-1 rounded hover:bg-green-600 transition hidden">👤 Профіль</a>
-      <a href="/create" id="createLink" class="px-3 py-1 rounded hover:bg-green-600 transition hidden">➕ Створити</a>
+      <a href="/admin" id="adminLink" class="px-3 py-1 rounded hover:bg-green-600 transition hidden">🔧 Адмінка</a>
       <button onclick="logout()" id="logoutBtn" class="bg-red-600 hover:bg-red-700 px-3 py-1 rounded hidden">🚪 Вийти</button>
     </nav>
   </header>  
@@ -27,7 +27,7 @@
   <main class="max-w-4xl mx-auto py-8 px-4">
     <div class="flex justify-between items-center mb-6">
       <h2 class="text-2xl font-semibold text-white">⚽ Найближчі матчі</h2>
-      <button id="createEventBtn" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg shadow-md transition">+ Створити</button>
+      <button id="createEventBtn" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg shadow-md transition hidden">+ Створити</button>
     </div>
 
     <div id="eventsList" class="space-y-6"></div>
@@ -66,14 +66,100 @@
   </div>
 
   <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      loadPosts();
-      document.getElementById('createEventBtn').addEventListener('click', () => {
-        window.location.href = '/create';
-      });
-    });
+    // ---------------------------
+    // 🔹 Helper: fetch wrapper that supports cookie (HttpOnly) + Bearer token fallback
+    // ---------------------------
+    async function apiFetch(url, opts = {}) {
+      // send cookies
+      opts.credentials = 'include';
+      opts.headers = opts.headers || {};
 
+      // if user stored token in localStorage (for Make/scripts), attach Authorization
+      const token = localStorage.getItem('token');
+      if (token && !opts.headers['Authorization']) {
+        opts.headers['Authorization'] = 'Bearer ' + token;
+      }
+
+      // if body is a plain object (not FormData), stringify and set header
+      if (opts.body && !(opts.body instanceof FormData) && typeof opts.body !== 'string') {
+        opts.headers['Content-Type'] = 'application/json';
+        opts.body = JSON.stringify(opts.body);
+      }
+
+      const res = await fetch(url, opts);
+      if (!res.ok) {
+        // try parse json error
+        let errBody = null;
+        try { errBody = await res.json(); } catch(e) { errBody = await res.text(); }
+        const err = new Error(errBody && errBody.error ? errBody.error : res.statusText);
+        err.status = res.status;
+        err.body = errBody;
+        throw err;
+      }
+      // Try parse JSON, else return null
+      try { return await res.json(); } catch { return null; }
+    }
+
+    // ---------------------------
+    // 🔹 Global state
+    // ---------------------------
+    window.currentUser = null;
+
+    // ---------------------------
+    // 🔹 Auth helpers
+    // ---------------------------
+    async function checkAuth() {
+      // try to get current user (this will use cookie or bearer token)
+      try {
+        const me = await apiFetch('/api/auth/me');
+        window.currentUser = me;
+        // UI updates
+        document.getElementById('loginLink').classList.add('hidden');
+        document.getElementById('registerLink').classList.add('hidden');
+        document.getElementById('profileLink').classList.remove('hidden');
+        document.getElementById('logoutBtn').classList.remove('hidden');
+
+        // only admins can access admin panel and create events via UI
+        if (me.role === 'admin') {
+          document.getElementById('adminLink').classList.remove('hidden');
+          document.getElementById('createEventBtn').classList.remove('hidden');
+        } else {
+          document.getElementById('adminLink').classList.add('hidden');
+          document.getElementById('createEventBtn').classList.add('hidden');
+        }
+      } catch (e) {
+        // not logged in — keep default
+        window.currentUser = null;
+        document.getElementById('loginLink').classList.remove('hidden');
+        document.getElementById('registerLink').classList.remove('hidden');
+        document.getElementById('profileLink').classList.add('hidden');
+        document.getElementById('adminLink').classList.add('hidden');
+        document.getElementById('createEventBtn').classList.add('hidden');
+        document.getElementById('logoutBtn').classList.add('hidden');
+      }
+    }
+
+    async function logout() {
+      try {
+        await apiFetch('/logout', { method: 'POST' });
+      } catch (e) {
+        // ignore errors
+      }
+      localStorage.removeItem('token');
+      window.currentUser = null;
+      // refresh UI
+      await checkAuth();
+      loadEvents();
+      loadPosts();
+      window.location.href = '/';
+    }
+
+    // ---------------------------
+    // 🔹 Posts (збережено оригінальну функцію, але використовуємо axios без кукі) 
+    // ---------------------------
     function loadPosts() {
+      // axios — залишив як у тебе, але попросимо посилати кукі теж на випадок
+      axios.defaults.withCredentials = true;
       axios.get('/api/posts')
         .then(response => {
           const posts = response.data;
@@ -89,7 +175,7 @@
             imgElement.classList.add('w-32', 'h-32', 'object-cover', 'rounded');
             
             const contentElement = document.createElement('div');
-            contentElement.innerHTML = `<h3 class="text-lg font-bold">${post.title}</h3><p>${post.content}</p>`;
+            contentElement.innerHTML = `<h3 class="text-lg font-bold">${escapeHtml(post.title)}</h3><p>${escapeHtml(post.content)}</p><p class="text-sm text-gray-300 mt-2">Автор: ${escapeHtml(post.author)}</p>`;
             
             postElement.appendChild(imgElement);
             postElement.appendChild(contentElement);
@@ -100,6 +186,185 @@
           console.error('Error loading posts:', error);
         });
     }
+
+    // ---------------------------
+    // 🔹 Events
+    // ---------------------------
+    async function loadEvents() {
+      try {
+        const events = await apiFetch('/events', { method: 'GET' });
+        const list = document.getElementById('eventsList');
+        list.innerHTML = '';
+
+        if (!Array.isArray(events) || events.length === 0) {
+          list.innerHTML = `<div class="text-gray-300">Подій поки немає</div>`;
+          return;
+        }
+
+        events.forEach(ev => {
+          const card = document.createElement('div');
+          card.className = 'bg-white bg-opacity-8 rounded p-4 flex gap-4 items-start';
+
+          const left = document.createElement('div');
+          left.className = 'w-28 h-28 flex-none';
+          const img = document.createElement('img');
+          img.className = 'w-28 h-28 object-cover rounded';
+          img.src = ev.image ? (ev.image.startsWith('http') ? ev.image : ev.image) : '/default.jpg';
+          img.alt = 'Event image';
+          left.appendChild(img);
+
+          const body = document.createElement('div');
+          body.className = 'flex-1';
+
+          const title = document.createElement('h3');
+          title.className = 'text-lg font-bold';
+          title.textContent = ev.title;
+
+          const meta = document.createElement('p');
+          meta.className = 'text-sm text-gray-200';
+          meta.innerHTML = ` <strong>Локація:</strong> ${escapeHtml(ev.location)} • <strong>Час:</strong> ${escapeHtml(ev.time)} • <strong>Створив:</strong> ${escapeHtml(ev.creator_name || '—')}`;
+
+          const actions = document.createElement('div');
+          actions.className = 'mt-3 flex gap-2';
+
+          // If admin -> show edit/delete
+          if (window.currentUser && window.currentUser.role === 'admin') {
+            const editBtn = document.createElement('button');
+            editBtn.className = 'px-3 py-1 bg-yellow-500 rounded text-black';
+            editBtn.textContent = 'Редагувати';
+            editBtn.onclick = () => openEditModal(ev);
+            actions.appendChild(editBtn);
+
+            const delBtn = document.createElement('button');
+            delBtn.className = 'px-3 py-1 bg-red-600 rounded';
+            delBtn.textContent = 'Видалити';
+            delBtn.onclick = () => deleteEvent(ev.id);
+            actions.appendChild(delBtn);
+          } else {
+            // show Join for logged-in users
+            if (window.currentUser) {
+              const joinBtn = document.createElement('button');
+              joinBtn.className = 'px-3 py-1 bg-green-600 rounded';
+              joinBtn.textContent = 'Приєднатись';
+              joinBtn.onclick = () => joinEvent(ev.id);
+              actions.appendChild(joinBtn);
+            } else {
+              const loginToJoin = document.createElement('a');
+              loginToJoin.href = '/login?next=/';
+              loginToJoin.className = 'px-3 py-1 bg-gray-600 rounded';
+              loginToJoin.textContent = 'Увійдіть щоб приєднатись';
+              actions.appendChild(loginToJoin);
+            }
+          }
+
+          body.appendChild(title);
+          body.appendChild(meta);
+          body.appendChild(actions);
+
+          card.appendChild(left);
+          card.appendChild(body);
+          list.appendChild(card);
+        });
+      } catch (e) {
+        console.error('Не вдалось завантажити події', e);
+        document.getElementById('eventsList').innerHTML = `<div class="text-red-300">Не вдалося завантажити події.</div>`;
+      }
+    }
+
+    // ---------------------------
+    // 🔹 Event actions
+    // ---------------------------
+    async function joinEvent(eventId) {
+      try {
+        await apiFetch(`/events/${eventId}/join`, { method: 'POST' });
+        alert('Ви успішно приєдналися');
+      } catch (e) {
+        console.error(e);
+        alert(e.message || 'Помилка приєднання');
+      }
+    }
+
+    async function deleteEvent(eventId) {
+      if (!confirm('Ви впевнені, що хочете видалити подію?')) return;
+      try {
+        await apiFetch(`/events/${eventId}`, { method: 'DELETE' });
+        await loadEvents();
+      } catch (e) {
+        console.error(e);
+        alert(e.message || 'Помилка при видаленні');
+      }
+    }
+
+    // ---------------------------
+    // 🔹 Edit modal
+    // ---------------------------
+    function openEditModal(ev) {
+      document.getElementById('editEventId').value = ev.id;
+      document.getElementById('editTitle').value = ev.title;
+      document.getElementById('editLocation').value = ev.location;
+      // convert time string to datetime-local usable value if possible
+      // assuming stored ISO-ish; fallback to empty
+      try {
+        const d = new Date(ev.time);
+        if (!isNaN(d)) {
+          const tzOffset = d.getTimezoneOffset() * 60000;
+          const localISO = new Date(d.getTime() - tzOffset).toISOString().slice(0,16);
+          document.getElementById('editTime').value = localISO;
+        } else {
+          document.getElementById('editTime').value = '';
+        }
+      } catch {
+        document.getElementById('editTime').value = '';
+      }
+      document.getElementById('editEventModal').classList.remove('hidden');
+    }
+
+    document.getElementById('closeEditModal').addEventListener('click', () => {
+      document.getElementById('editEventModal').classList.add('hidden');
+    });
+
+    document.getElementById('editEventForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const id = document.getElementById('editEventId').value;
+      const title = document.getElementById('editTitle').value;
+      const location = document.getElementById('editLocation').value;
+      const time = document.getElementById('editTime').value;
+
+      try {
+        await apiFetch(`/events/${id}`, { method: 'PUT', body: { title, location, time } });
+        document.getElementById('editEventModal').classList.add('hidden');
+        await loadEvents();
+      } catch (err) {
+        console.error(err);
+        alert(err.message || 'Помилка при оновленні події');
+      }
+    });
+
+    // ---------------------------
+    // 🔹 Utility
+    // ---------------------------
+    function escapeHtml(str) {
+      if (typeof str !== 'string') return str;
+      return str.replace(/[&<>"']/g, (m) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+    }
+
+    // ---------------------------
+    // 🔹 Init
+    // ---------------------------
+    document.addEventListener('DOMContentLoaded', async () => {
+      // check auth first (so loadEvents can show admin controls)
+      await checkAuth();
+
+      // load data
+      loadEvents();
+      loadPosts();
+
+      // create button (redirect)
+      document.getElementById('createEventBtn').addEventListener('click', () => {
+        // safe redirect to create page (only admins see the button)
+        window.location.href = '/create';
+      });
+    });
   </script>
 
 </body>

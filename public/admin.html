@@ -1,105 +1,70 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="uk">
 <head>
-  <meta charset="utf-8" />
-  <title>FanMatch Admin</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <script defer src="/js/auth.js"></script>
-  <style>
-    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; margin: 20px; }
-    .hidden { display: none; }
-    .btn { padding: 8px 12px; border: 1px solid #ddd; cursor: pointer; border-radius: 6px; }
-    input, textarea { width: 100%; padding: 8px; margin: 6px 0; }
-    .card { border: 1px solid #eee; padding: 16px; border-radius: 10px; margin-bottom: 16px; }
-  </style>
+  <meta charset="UTF-8">
+  <title>Адмінка</title>
+  <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
-  <h1>Адмінка</h1>
-  <p id="user-info">Перевіряю права…</p>
-  <button class="btn" id="logoutBtn">Вийти</button>
+  <header>
+    <h1>Панель адміністратора</h1>
+    <div id="user-info"></div>
+    <button id="logoutBtn" class="btn">Вийти</button>
+  </header>
 
-  <div id="admin-panels" class="hidden">
-    <div class="card">
-      <h2>Створити пост</h2>
-      <form id="postForm">
-        <input type="text" name="title" placeholder="Заголовок" required />
-        <textarea name="content" placeholder="Текст" required></textarea>
-        <input type="file" name="image" accept="image/*" />
-        <button class="btn" type="submit">Створити</button>
+  <main id="admin-panels" class="hidden">
+    <section>
+      <h2>Пости</h2>
+      <form id="createPostForm">
+        <input type="text" id="postTitle" placeholder="Заголовок" required>
+        <textarea id="postContent" placeholder="Текст" required></textarea>
+        <button type="submit" class="btn">Створити пост</button>
       </form>
-      <p id="postMsg"></p>
-    </div>
+      <div id="postsList"></div>
+    </section>
 
-    <div class="card">
-      <h2>Створити подію</h2>
-      <form id="eventForm" enctype="multipart/form-data">
-        <input type="text" name="title" placeholder="Назва" required />
-        <input type="text" name="location" placeholder="Локація" required />
-        <input type="datetime-local" name="time" required />
-        <input type="file" name="image" accept="image/*" />
-        <button class="btn" type="submit">Створити</button>
+    <section>
+      <h2>Події</h2>
+      <form id="createEventForm">
+        <input type="text" id="eventTitle" placeholder="Назва" required>
+        <input type="text" id="eventLocation" placeholder="Локація" required>
+        <input type="datetime-local" id="eventTime" required>
+        <button type="submit" class="btn">Створити подію</button>
       </form>
-      <p id="eventMsg"></p>
-    </div>
-  </div>
+      <div id="eventsList"></div>
+    </section>
+  </main>
 
+  <script src="/auth.js"></script>
+  <script src="/js/admin.js" defer></script>
   <script>
-    (async function init() {
-      try {
-        const me = await Auth.me(); // кукі піде автоматично
-        document.getElementById('user-info').textContent = `${me.username} (${me.role})`;
-        if (me.role !== 'admin') {
-          alert('Доступ лише для адміністраторів');
-          location.href = '/';
-          return;
-        }
-        document.getElementById('admin-panels').classList.remove('hidden');
-      } catch {
-        location.href = '/login?next=/admin';
+    document.addEventListener('DOMContentLoaded', () => {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        window.location.href = "/admin-login.html";
+        return;
       }
-    })();
 
-    // створити пост (admin only)
-    document.getElementById('postForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const fd = new FormData(e.target);
-      const res = await fetch('/posts', {
-        method: 'POST',
-        body: fd,
-        credentials: 'include'
+      axios.get('/verify-admin', { headers: { 'Authorization': `Bearer ${token}` } })
+        .then(res => {
+          if (!res.data.isAdmin) {
+            window.location.href = "/admin-login.html";
+          } else {
+            document.getElementById('admin-panels').classList.remove('hidden');
+            document.getElementById('user-info').textContent = `Вітаємо, ${res.data.username}`;
+          }
+        })
+        .catch(err => {
+          console.error("Authorization error:", err);
+          window.location.href = "/admin-login.html";
+        });
+
+      document.getElementById('logoutBtn').addEventListener('click', () => {
+        localStorage.removeItem('token');
+        localStorage.removeItem('userId');
+        localStorage.removeItem('username');
+        window.location.href = "/admin-login.html";
       });
-      const txt = document.getElementById('postMsg');
-      if (!res.ok) {
-        const j = await res.json().catch(()=>({error:'Помилка'}));
-        txt.textContent = '❌ ' + (j.error || res.statusText);
-      } else {
-        txt.textContent = '✅ Пост створено';
-        e.target.reset();
-      }
-    });
-
-    // створити подію (admin only)
-    document.getElementById('eventForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const fd = new FormData(e.target);
-      const res = await fetch('/events', {
-        method: 'POST',
-        body: fd,
-        credentials: 'include'
-      });
-      const txt = document.getElementById('eventMsg');
-      if (!res.ok) {
-        const j = await res.json().catch(()=>({error:'Помилка'}));
-        txt.textContent = '❌ ' + (j.error || res.statusText);
-      } else {
-        txt.textContent = '✅ Подію створено';
-        e.target.reset();
-      }
-    });
-
-    document.getElementById('logoutBtn').addEventListener('click', async () => {
-      await fetch('/logout', { method: 'POST', credentials: 'include' });
-      location.href = '/';
     });
   </script>
 </body>

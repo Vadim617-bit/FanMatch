@@ -6,7 +6,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-  <script src="script.js" defer></script>
 </head>
 <body class="bg-gradient-to-br from-green-800 via-green-900 to-gray-900 text-white min-h-screen font-sans">
 
@@ -43,5 +42,63 @@
     </form>
   </main>
 
+  <script>
+    // показати кнопки якщо користувач залогінений
+    window.addEventListener('DOMContentLoaded', async () => {
+      try {
+        const userData = await window.Auth.me();
+        if (userData.isAdmin) {
+          document.getElementById('profileLink')?.classList.remove('hidden');
+          document.getElementById('createLink')?.classList.remove('hidden');
+          document.getElementById('logoutBtn')?.classList.remove('hidden');
+        } else {
+          alert('У вас немає прав адміністратора.');
+          window.location.href = '/';
+        }
+      } catch (error) {
+        console.error('Помилка авторизації:', error);
+        window.location.href = '/login';
+      }
+    });
+
+    function logout() {
+      localStorage.clear();
+      window.location.href = '/login';
+    }
+
+    // обробка форми
+    document.getElementById('postForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const token = localStorage.getItem('token');
+      if (!token) {
+        alert("Спочатку увійдіть у свій акаунт!");
+        return window.location.href = "/login";
+      }
+
+      const title = document.getElementById('postTitle').value;
+      const content = document.getElementById('postContent').value;
+      const image = document.getElementById('postImage').files[0];
+
+      const formData = new FormData();
+      formData.append('title', title);
+      formData.append('content', content);
+      if (image) formData.append('image', image);
+
+      try {
+        await axios.post('/posts', formData, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data'
+          }
+        });
+        alert("✅ Пост створено!");
+        window.location.href = "/posts.html";
+      } catch (err) {
+        console.error("Помилка створення поста:", err);
+        alert("❌ Не вдалося створити пост");
+      }
+    });
+  </script>
 </body>
 </html>

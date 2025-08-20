@@ -5,11 +5,10 @@
   <title>👤 Профіль – FanMatch</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-  <script src="script.js" defer></script>
 </head>
 <body class="min-h-screen bg-gradient-to-br from-green-800 via-green-900 to-gray-900 text-white font-sans">
 
-  <!-- 🔗 Навігація -->
+  <!-- Навігація -->
   <header class="bg-black bg-opacity-80 text-white p-4 flex justify-between items-center shadow-lg">
     <h1 class="text-2xl font-bold tracking-wide">🏟️ FanMatch</h1>
     <nav class="flex gap-2 items-center">
@@ -18,15 +17,21 @@
       <a href="/register" class="px-3 py-1 rounded hover:bg-green-600 transition">📝 Реєстрація</a>
       <a href="/profile" id="profileLink" class="px-3 py-1 rounded hover:bg-green-600 transition hidden">👤 Профіль</a>
       <a href="/create" id="createLink" class="px-3 py-1 rounded hover:bg-green-600 transition hidden">➕ Створити</a>
+      <a href="/admin" id="adminLink" class="px-3 py-1 rounded hover:bg-green-600 transition hidden">🔧 Адмінка</a>
       <button onclick="logout()" id="logoutBtn" class="bg-red-600 hover:bg-red-700 px-3 py-1 rounded hidden">🚪 Вийти</button>
     </nav>
   </header>
 
+  <!-- Основний контент -->
   <main class="max-w-4xl mx-auto py-8 px-4">
-    <h2 class="text-2xl font-semibold mb-4 text-white">Вітаємо, <span id="username" class="text-green-300 font-bold"></span>!</h2>
+    <h2 class="text-2xl font-semibold mb-4 text-white">
+      Вітаємо, <span id="username" class="text-green-300 font-bold"></span>!
+    </h2>
+
     <h3 class="text-xl mb-3 text-white">📅 Твої події</h3>
     <div id="my-events" class="space-y-6"></div>
-    <h3 class="text-xl mb-3 text-white">📰 Твої пости</h3>
+
+    <h3 class="text-xl mb-3 text-white mt-8">📰 Твої пости</h3>
     <div id="my-posts" class="space-y-6"></div>
   </main>
 
@@ -36,21 +41,34 @@
     const myPostsEl = document.getElementById('my-posts');
     const userId = localStorage.getItem('userId');
     const username = localStorage.getItem('username');
-    const token = localStorage.getItem('token'); // Ensure token is retrieved for authorization
+    const token = localStorage.getItem('token');
+    const isAdmin = localStorage.getItem('isAdmin') === 'true';
 
     if (username) {
       usernameEl.textContent = username;
+      document.getElementById('profileLink').classList.remove('hidden');
+      document.getElementById('logoutBtn').classList.remove('hidden');
+      if (isAdmin) {
+        document.getElementById('createLink').classList.remove('hidden');
+        document.getElementById('adminLink').classList.remove('hidden');
+      }
+    } else {
+      window.location.href = '/login';
     }
 
+    function logout() {
+      localStorage.clear();
+      window.location.href = '/login';
+    }
+
+    // ===================== Події =====================
     async function fetchMyEvents() {
       try {
         const res = await axios.get('/events', {
-          headers: {
-            'Authorization': `Bearer ${token}` // Add authorization header
-          }
+          headers: { 'Authorization': `Bearer ${token}` }
         });
-        const events = res.data.filter(e => e.creator_id == userId);
 
+        const events = res.data.filter(e => String(e.creator_id) === String(userId));
         myEventsEl.innerHTML = '';
 
         if (events.length === 0) {
@@ -62,12 +80,11 @@
           const div = document.createElement('div');
           div.className = 'bg-black bg-opacity-60 border border-green-600 rounded-2xl p-5 shadow-lg transition hover:scale-[1.01]';
           div.innerHTML = `
-            ${event.image ? `<img src="${event.image}" class="w-full h-48 object-cover rounded mb-3">` : ''}
+            <img src="${event.image || 'default-event.jpg'}" class="w-full h-48 object-cover rounded mb-3">
             <h4 class="text-xl font-bold text-green-300 mb-2">⚽ ${event.title}</h4>
             <p class="text-white">📍 ${event.location}</p>
             <p class="text-white">⏰ ${new Date(event.time).toLocaleString()}</p>
             <div class="mt-4 flex gap-2">
-              <button onclick="editEvent(${event.id})" class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded">Редагувати</button>
               <button onclick="deleteEvent(${event.id})" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded">Видалити</button>
             </div>
           `;
@@ -79,15 +96,27 @@
       }
     }
 
+    async function deleteEvent(eventId) {
+      if (!confirm('Видалити цю подію?')) return;
+      try {
+        await axios.delete(`/events/${eventId}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        fetchMyEvents();
+      } catch (err) {
+        console.error('Помилка при видаленні події:', err);
+        alert('Не вдалося видалити подію.');
+      }
+    }
+
+    // ===================== Пости =====================
     async function fetchMyPosts() {
       try {
         const res = await axios.get('/api/posts', {
-          headers: {
-            'Authorization': `Bearer ${token}` // Add authorization header
-          }
+          headers: { 'Authorization': `Bearer ${token}` }
         });
-        const posts = res.data.filter(p => p.creator_id == userId);
 
+        const posts = res.data.filter(p => String(p.creator_id) === String(userId));
         myPostsEl.innerHTML = '';
 
         if (posts.length === 0) {
@@ -99,9 +128,12 @@
           const div = document.createElement('div');
           div.className = 'bg-black bg-opacity-60 border border-green-600 rounded-2xl p-5 shadow-lg transition hover:scale-[1.01]';
           div.innerHTML = `
-            ${post.imageUrl ? `<img src="${post.imageUrl}" class="w-full h-48 object-cover rounded mb-3">` : ''}
+            <img src="${post.imageUrl || 'default-post.jpg'}" class="w-full h-48 object-cover rounded mb-3">
             <h4 class="text-xl font-bold text-green-300 mb-2">📰 ${post.title}</h4>
             <p class="text-white">${post.content}</p>
+            <div class="mt-4 flex gap-2">
+              <button onclick="deletePost(${post.id})" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded">Видалити</button>
+            </div>
           `;
           myPostsEl.appendChild(div);
         });
@@ -111,22 +143,23 @@
       }
     }
 
+    async function deletePost(postId) {
+      if (!confirm('Видалити цей пост?')) return;
+      try {
+        await axios.delete(`/api/posts/${postId}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        fetchMyPosts();
+      } catch (err) {
+        console.error('Помилка при видаленні поста:', err);
+        alert('Не вдалося видалити пост.');
+      }
+    }
+
+    // ===================== Завантаження =====================
     fetchMyEvents();
     fetchMyPosts();
-
-    // 🔐 Навігація
-    window.addEventListener('DOMContentLoaded', () => {
-      if (username) {
-        document.getElementById('profileLink')?.classList.remove('hidden');
-        document.getElementById('createLink')?.classList.remove('hidden');
-        document.getElementById('logoutBtn')?.classList.remove('hidden');
-      }
-    });
-
-    function logout() {
-      localStorage.clear();
-      window.location.href = '/login';
-    }
   </script>
+
 </body>
 </html>

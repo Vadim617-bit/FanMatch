@@ -1,77 +1,123 @@
 <!DOCTYPE html>
 <html lang="uk">
 <head>
-  <meta charset="UTF-8">
-  <title>Пости – FanMatch</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8" />
+  <title>Створити подію – FanMatch</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-  <script src="script.js" defer></script>
 </head>
-<body class="bg-gradient-to-br from-green-800 via-green-900 to-gray-900 text-white min-h-screen">
+<body class="min-h-screen bg-gradient-to-br from-green-800 via-green-900 to-gray-900 text-white font-sans">
 
-  <!-- 🧭 Навігація -->
+  <!-- 👤 Навігація -->
   <header class="bg-black bg-opacity-80 text-white p-4 flex justify-between items-center shadow-lg">
-    <h1 class="text-2xl font-bold tracking-wide">📢 FanMatch Пости</h1>
+    <h1 class="text-2xl font-bold tracking-wide">🏟️ FanMatch</h1>
     <nav class="flex gap-2 items-center">
       <a href="/" class="px-3 py-1 rounded hover:bg-green-600 transition">🏠 Головна</a>
       <a href="/login" class="px-3 py-1 rounded hover:bg-green-600 transition">🔑 Вхід</a>
       <a href="/register" class="px-3 py-1 rounded hover:bg-green-600 transition">📝 Реєстрація</a>
       <a href="/profile" id="profileLink" class="px-3 py-1 rounded hover:bg-green-600 transition hidden">👤 Профіль</a>
-      <a href="/create" id="createLink" class="px-3 py-1 rounded hover:bg-green-600 transition hidden">➕ Створити подію</a>
+      <a href="/create.html" id="createLink" class="px-3 py-1 rounded hover:bg-green-600 transition hidden">➕ Створити</a>
       <button onclick="logout()" id="logoutBtn" class="bg-red-600 hover:bg-red-700 px-3 py-1 rounded hidden">🚪 Вийти</button>
     </nav>
-  </header>
+  </header>  
 
-  <!-- 📋 Контент -->
-  <main class="max-w-5xl mx-auto p-6">
-    <h2 class="text-3xl font-semibold mb-6">📰 Футбольні пости</h2>
-    <div id="postsContainer" class="space-y-8">
-      <!-- Ensure posts are loaded by calling loadPosts() on page load -->
-      <script>
-        document.addEventListener('DOMContentLoaded', () => {
-          if (document.getElementById('postsContainer')) {
-            loadPosts();
-          }
-          // Ensure create event button is functional
-          const createEventBtn = document.getElementById('createEventBtn');
-          if (createEventBtn) {
-            createEventBtn.addEventListener('click', () => {
-              window.location.href = '/create.html';
-            });
-          }
-        });
+  <!-- 📝 Форма створення -->
+  <main class="p-6 max-w-xl mx-auto">
+    <h2 class="text-2xl font-semibold mb-6 text-white">➕ Створити футбольну подію</h2>
+    <form id="createForm" class="space-y-4 bg-black bg-opacity-60 p-6 rounded-xl shadow-xl" enctype="multipart/form-data">
+      <div>
+        <label for="title" class="block mb-1 text-green-300">Назва події</label>
+        <input id="title" type="text" required placeholder="Наприклад: Перегляд фіналу"
+               class="w-full p-2 border border-green-500 bg-transparent rounded text-white placeholder-gray-400" />
+      </div>
 
-        function loadPosts() {
-          axios.get('/api/posts')
-            .then(response => {
-              const posts = response.data;
-              const postsContainer = document.getElementById('postsContainer');
-              postsContainer.innerHTML = ''; // Clear existing posts
-              posts.forEach(post => {
-                const postElement = document.createElement('div');
-                postElement.classList.add('bg-white', 'bg-opacity-10', 'p-4', 'rounded', 'shadow-lg', 'flex', 'gap-4', 'items-start');
-                
-                const imgElement = document.createElement('img');
-                imgElement.src = post.imageUrl || 'default-image.jpg'; // Ensure a default image is used if imageUrl is not provided
-                imgElement.alt = 'Post Image';
-                imgElement.classList.add('w-32', 'h-32', 'object-cover', 'rounded');
-                
-                const contentElement = document.createElement('div');
-                contentElement.innerHTML = `<h3 class="text-xl font-bold">${post.title}</h3><p>${post.content}</p>`;
-                
-                postElement.appendChild(imgElement);
-                postElement.appendChild(contentElement);
-                postsContainer.appendChild(postElement);
-              });
-            })
-            .catch(error => {
-              console.error('Error loading posts:', error);
-            });
-        }
-      </script>
-    </div>
+      <div>
+        <label for="location" class="block mb-1 text-green-300">Місце</label>
+        <input id="location" type="text" required placeholder="м. Київ, паб X"
+               class="w-full p-2 border border-green-500 bg-transparent rounded text-white placeholder-gray-400" />
+      </div>
+
+      <div>
+        <label for="date_time" class="block mb-1 text-green-300">Дата і час</label>
+        <input id="date_time" type="datetime-local" required
+               class="w-full p-2 border border-green-500 bg-transparent rounded text-white"
+               min="" />
+      </div>
+
+      <div>
+        <label for="image" class="block mb-1 text-green-300">Зображення події (необовʼязково)</label>
+        <input id="image" type="file" accept="image/*"
+               class="w-full p-2 border border-green-500 bg-transparent rounded text-white" />
+      </div>
+
+      <button type="submit"
+              class="w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded transition">
+        ✅ Створити подію
+      </button>
+    </form>
   </main>
 
+  <script>
+    // Показ кнопок навігації, якщо є токен
+    window.addEventListener('DOMContentLoaded', () => {
+      const token = localStorage.getItem('token');
+      const isAdmin = localStorage.getItem('isAdmin') === 'true';
+      if (token) {
+        document.getElementById('profileLink').classList.remove('hidden');
+        document.getElementById('logoutBtn').classList.remove('hidden');
+        if (isAdmin) {
+          document.getElementById('createLink').classList.remove('hidden');
+        }
+      }
+
+      // Встановлюємо мінімальну дату для datetime-local
+      const dateInput = document.getElementById('date_time');
+      const now = new Date();
+      const minDate = now.toISOString().slice(0,16);
+      dateInput.min = minDate;
+    });
+
+    // Вихід
+    function logout() {
+      localStorage.clear();
+      window.location.href = '/login';
+    }
+
+    // Створення події
+    document.getElementById('createForm').addEventListener('submit', async (event) => {
+      event.preventDefault();
+
+      const token = localStorage.getItem('token');
+      const isAdmin = localStorage.getItem('isAdmin') === 'true';
+      if (!token || !isAdmin) {
+        alert('Ви не авторизовані або не маєте прав адміністратора.');
+        window.location.href = '/login';
+        return;
+      }
+
+      const formData = new FormData(event.target);
+
+      // Опційно: перевірка розміру та типу файлу
+      const file = formData.get('image');
+      if (file && file.size > 5*1024*1024) { // 5MB
+        alert('Зображення занадто велике (макс 5MB)');
+        return;
+      }
+
+      try {
+        const response = await axios.post('/events', formData, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        console.log('Подія успішно створена:', response.data);
+        window.location.href = '/posts.html'; // Redirect
+      } catch (error) {
+        console.error('Помилка при створенні події:', error);
+        alert('Сталася помилка при створенні події.');
+      }
+    });
+  </script>
 </body>
 </html>
